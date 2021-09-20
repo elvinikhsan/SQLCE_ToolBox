@@ -1,13 +1,15 @@
-SELECT  TOP 10 DB_NAME(database_id) AS DatabaseName,
-        OBJECT_NAME(object_id,database_id) AS ProcName,
-		execution_count,
-        total_elapsed_time / 1000000 TotElapsed,
-		(total_elapsed_time/1000000)/execution_count AvgElapsed,
-        last_elapsed_time / 1000000 LastElapsed,
-        min_elapsed_time / 1000000 MinElapsed,
-        max_elapsed_time / 1000000 MaxElapsed,
-        max_logical_reads / 1000000 MaxRead,
-        max_logical_writes / 1000000 MaxWrite
-FROM    sys.dm_exec_procedure_stats
-WHERE database_id > = 5 and database_id <= 32766
-ORDER BY execution_count DESC
+SELECT TOP(10) p.name AS [SP Name], qs.execution_count AS [Execution Count],
+ISNULL(qs.execution_count/DATEDIFF(Minute, qs.cached_time, GETDATE()), 0) AS [Calls/Minute],
+qs.total_elapsed_time/qs.execution_count AS [Avg Elapsed Time],
+qs.total_worker_time/qs.execution_count AS [Avg Worker Time],    
+qs.total_logical_reads/qs.execution_count AS [Avg Logical Reads],
+CASE WHEN CONVERT(nvarchar(max), qp.query_plan) LIKE N'%<MissingIndexes>%' THEN 1 ELSE 0 END AS [Has Missing Index],
+FORMAT(qs.last_execution_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Last Execution Time], 
+FORMAT(qs.cached_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Plan Cached Time]
+FROM sys.procedures AS p WITH (NOLOCK)
+INNER JOIN sys.dm_exec_procedure_stats AS qs WITH (NOLOCK)
+ON p.[object_id] = qs.[object_id]
+CROSS APPLY sys.dm_exec_query_plan(qs.plan_handle) AS qp
+WHERE qs.database_id = DB_ID()
+AND DATEDIFF(Minute, qs.cached_time, GETDATE()) > 0
+ORDER BY qs.execution_count DESC OPTION (RECOMPILE);
