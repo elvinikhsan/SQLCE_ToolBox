@@ -17,8 +17,6 @@
 :SETVAR SQLSERVICE "CONTOSO\sqlserversvc"
 -- the AG name
 :SETVAR AGNAME "AGDEMO1"
--- the listener name
-:SETVAR LISTNR "AGDEMO1LISTNR"
 -- the database name
 :SETVAR DBNAME "DUMMYDB"
 
@@ -153,7 +151,7 @@ GO
 /* Create availability group */
 -- With SQL 2016+ we can use Direct Seeding instead for small-medium database size.
 -- Here we connect to our primary replica (NODE1) and create our AG. */
-:Connect NODE1
+:Connect $(NODE1)
 /* We can use trace flag 9567 to enable compression for the VDI backup for the seeding process */
 RAISERROR('Turning on TRACE 9567 on NODE1...',0,1) WITH NOWAIT;
 GO
