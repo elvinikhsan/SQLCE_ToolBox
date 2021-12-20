@@ -1,3 +1,6 @@
+/*** WARNING! This script is only for new AG installation only!! ***/
+/*** DO NOT use the script on an already running AG environment! ***/
+
 /***************** PLEASE ENABLE SQLCMD MODE!! ******************/
 -- make sure to change the variables values accordingly
 /****************************************************************/
@@ -9,7 +12,7 @@
 :SETVAR NODE2 "NODE2"
 :SETVAR NODE3 "NODE3"
 -- the AG name
-:SETVAR AGNAME "AGDEMO1"
+:SETVAR AGNAME "AOAG1"
 
 PRINT 'Set SQLCMD variables done!';
 GO
