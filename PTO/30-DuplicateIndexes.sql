@@ -64,7 +64,7 @@ BEGIN
 						and ic1.index_id < ic2.index_id and ic1.cols = ic2.cols
 						and (ISNULL(ic1.inc,'''') = ISNULL(ic2.inc,'''')  OR ic1.index_id=1 )
 						)
-						SELECT DISTINCT ''' + REPLACE(@dbname, CHAR(39), CHAR(95)) + ''' AS [DatabaseName],
+						SELECT ''' + REPLACE(@dbname, CHAR(39), CHAR(95)) + ''' AS [DatabaseName],
 						SchemaName,TableName, IndexName,DuplicateIndexName, IndexCols, index_id, object_id
 						FROM DuplicatesTable dt
 						ORDER BY 1,2,3;'
