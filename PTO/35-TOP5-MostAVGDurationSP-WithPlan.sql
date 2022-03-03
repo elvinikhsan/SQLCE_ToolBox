@@ -18,7 +18,7 @@ WHERE (a.database_id > 4 AND DB_NAME(database_id) <> 'Resource')
 AND qp.query_plan IS NOT NULL
 ORDER BY AVG_ELAPSED DESC;
 GO
-SELECT TOP(5) p.name AS [SP Name], qs.min_elapsed_time, qs.total_elapsed_time/qs.execution_count AS [avg_elapsed_time], 
+SELECT TOP(5) DB_NAME(qs.database_id) AS DBName, p.name AS [SP Name], qs.min_elapsed_time, qs.total_elapsed_time/qs.execution_count AS [avg_elapsed_time], 
 qs.max_elapsed_time, qs.last_elapsed_time, qs.total_elapsed_time, qs.execution_count, 
 ISNULL(qs.execution_count/DATEDIFF(Minute, qs.cached_time, GETDATE()), 0) AS [Calls/Minute], 
 qs.total_worker_time/qs.execution_count AS [AvgWorkerTime], 
@@ -30,6 +30,6 @@ FROM sys.procedures AS p WITH (NOLOCK)
 INNER JOIN sys.dm_exec_procedure_stats AS qs WITH (NOLOCK)
 ON p.[object_id] = qs.[object_id]
 CROSS APPLY sys.dm_exec_query_plan(qs.plan_handle) AS qp
-WHERE qs.database_id = DB_ID()
-AND DATEDIFF(Minute, qs.cached_time, GETDATE()) > 0
+--WHERE qs.database_id = DB_ID()
+WHERE DATEDIFF(Minute, qs.cached_time, GETDATE()) > 0
 ORDER BY avg_elapsed_time DESC OPTION (RECOMPILE);

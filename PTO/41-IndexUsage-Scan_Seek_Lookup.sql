@@ -1,32 +1,61 @@
-SELECT OBJECT_NAME(IX.OBJECT_ID) Table_Name
-	   ,IX.name AS Index_Name
-	   ,IX.type_desc Index_Type
-	   ,SUM(PS.[used_page_count]) * 8 IndexSizeKB
-	   ,IXUS.user_seeks AS NumOfSeeks
-	   ,IXUS.user_scans AS NumOfScans
-	   ,IXUS.user_lookups AS NumOfLookups
-	   ,IXUS.user_updates AS NumOfUpdates
-	   ,IXUS.last_user_seek AS LastSeek
-	   ,IXUS.last_user_scan AS LastScan
-	   ,IXUS.last_user_lookup AS LastLookup
-	   ,IXUS.last_user_update AS LastUpdate
-FROM sys.indexes IX
-INNER JOIN sys.dm_db_index_usage_stats IXUS ON IXUS.index_id = IX.index_id AND IXUS.OBJECT_ID = IX.OBJECT_ID
-INNER JOIN sys.dm_db_partition_stats PS on PS.object_id=IX.object_id
-WHERE OBJECTPROPERTY(IX.OBJECT_ID,'IsUserTable') = 1
-GROUP BY OBJECT_NAME(IX.OBJECT_ID) ,IX.name ,IX.type_desc ,IXUS.user_seeks ,IXUS.user_scans ,IXUS.user_lookups,IXUS.user_updates ,IXUS.last_user_seek ,IXUS.last_user_scan ,IXUS.last_user_lookup ,IXUS.last_user_update;
-GO
-SELECT OBJECT_NAME(s.[object_id]) AS [Table Name], i.name AS [Index Name], i.index_id, 
-i.is_disabled, i.is_hypothetical, i.has_filter, i.fill_factor,
-s.user_updates AS [Total Writes], s.user_seeks + s.user_scans + s.user_lookups AS [Total Reads],
-s.user_updates - (s.user_seeks + s.user_scans + s.user_lookups) AS [Difference]
-FROM sys.dm_db_index_usage_stats AS s WITH (NOLOCK)
-INNER JOIN sys.indexes AS i WITH (NOLOCK)
-ON s.[object_id] = i.[object_id]
-AND i.index_id = s.index_id
-WHERE OBJECTPROPERTY(s.[object_id],'IsUserTable') = 1
-AND s.database_id = DB_ID()
-AND s.user_updates > (s.user_seeks + s.user_scans + s.user_lookups)
-AND i.index_id > 1 AND i.[type_desc] = N'NONCLUSTERED'
-AND i.is_primary_key = 0 AND i.is_unique_constraint = 0 AND i.is_unique = 0
-ORDER BY [Difference] DESC, [Total Writes] DESC, [Total Reads] ASC OPTION (RECOMPILE);
+DECLARE @dbname SYSNAME; 
+DECLARE @sqlcommand AS TABLE (ID INT IDENTITY(1,1) PRIMARY KEY CLUSTERED, CommandText VARCHAR(MAX));
+DECLARE @databases AS TABLE (ID INT IDENTITY(1,1) PRIMARY KEY CLUSTERED, DBName SYSNAME);
+DECLARE @temp AS TABLE 
+		(ID INT IDENTITY(1,1) PRIMARY KEY CLUSTERED
+		,[DatabaseName] SYSNAME
+		,TableName SYSNAME NULL
+		,IndexName SYSNAME NULL
+		,TypeDesc VARCHAR(25)
+		,IndexSizeKB INT NULL
+		,NumOfSeeks INT NULL
+		,NumOfScan INT NULL
+		,NumOfLookups INT NULL
+		,NumOfUpdates INT NULL);
+
+DECLARE @count INT = 0;
+DECLARE @j INT =1;
+
+INSERT INTO @databases SELECT name 
+FROM master.dbo.sysdatabases 
+WHERE name NOT IN ('master','model','msdb','tempdb')  
+ORDER BY name;
+
+SELECT @count=COUNT(*) FROM @databases;
+
+-- generate commands and store it in @sqlcommand
+WHILE @j <= @count
+BEGIN  
+		DECLARE @sqltext VARCHAR(MAX)='';
+		SELECT @dbname = DBName FROM @databases WHERE ID=@j;
+		SET @sqltext = 'USE ' + QUOTENAME(@dbname) + ';
+						SELECT ''' + REPLACE(@dbname, CHAR(39), CHAR(95)) + ''' AS [DatabaseName], OBJECT_NAME(IX.OBJECT_ID) Table_Name
+							   ,IX.name AS Index_Name
+							   ,IX.type_desc Index_Type
+							   ,SUM(PS.[used_page_count]) * 8 IndexSizeKB
+							   ,IXUS.user_seeks AS NumOfSeeks
+							   ,IXUS.user_scans AS NumOfScans
+							   ,IXUS.user_lookups AS NumOfLookups
+							   ,IXUS.user_updates AS NumOfUpdates
+						FROM sys.indexes IX
+						INNER JOIN sys.dm_db_index_usage_stats IXUS ON IXUS.index_id = IX.index_id AND IXUS.OBJECT_ID = IX.OBJECT_ID
+						INNER JOIN sys.dm_db_partition_stats PS on PS.object_id=IX.object_id
+						WHERE OBJECTPROPERTY(IX.OBJECT_ID,''IsUserTable'') = 1
+						GROUP BY OBJECT_NAME(IX.OBJECT_ID) ,IX.name ,IX.type_desc ,IXUS.user_seeks ,IXUS.user_scans ,IXUS.user_lookups,IXUS.user_updates;'
+
+		INSERT INTO @sqlcommand(CommandText) VALUES (@sqltext);
+		SET @j=@j+1;
+END  
+
+--execute the commands
+SET @j=1;
+WHILE @j<= @count
+BEGIN
+	DECLARE @sqlcmd NVARCHAR(MAX)='';
+	SELECT @sqlcmd = CommandText FROM @sqlcommand WHERE ID=@j;
+	INSERT INTO @temp
+	EXEC (@sqlcmd);
+	SET @j=@j+1;
+END
+
+SELECT * FROM @temp ORDER BY ID;

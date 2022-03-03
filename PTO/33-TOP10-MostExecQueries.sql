@@ -1,4 +1,4 @@
-SELECT TOP(10) LEFT(t.[text], 50) AS [Short Query Text], qs.execution_count AS [Execution Count],
+SELECT TOP(10) DB_NAME(t.dbid) AS DBName, LEFT(t.[text], 50) AS [Short Query Text], qs.execution_count AS [Execution Count],
 qs.total_logical_reads AS [Total Logical Reads],
 qs.total_logical_reads/qs.execution_count AS [Avg Logical Reads],
 qs.total_worker_time AS [Total Worker Time],
@@ -11,5 +11,5 @@ qs.creation_time AS [Creation Time]
 FROM sys.dm_exec_query_stats AS qs WITH (NOLOCK)
 CROSS APPLY sys.dm_exec_sql_text(plan_handle) AS t 
 CROSS APPLY sys.dm_exec_query_plan(plan_handle) AS qp 
-WHERE t.dbid = DB_ID()
+--WHERE t.dbid = DB_ID()
 ORDER BY qs.execution_count DESC OPTION (RECOMPILE);

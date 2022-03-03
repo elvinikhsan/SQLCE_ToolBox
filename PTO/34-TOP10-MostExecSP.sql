@@ -1,4 +1,4 @@
-SELECT TOP(10) p.name AS [SP Name], qs.execution_count AS [Execution Count],
+SELECT TOP(10) DB_NAME(qs.database_id) AS DBName, p.name AS [SP Name], qs.execution_count AS [Execution Count],
 ISNULL(qs.execution_count/DATEDIFF(Minute, qs.cached_time, GETDATE()), 0) AS [Calls/Minute],
 qs.total_elapsed_time/qs.execution_count AS [Avg Elapsed Time],
 qs.total_worker_time/qs.execution_count AS [Avg Worker Time],    
@@ -10,6 +10,6 @@ FROM sys.procedures AS p WITH (NOLOCK)
 INNER JOIN sys.dm_exec_procedure_stats AS qs WITH (NOLOCK)
 ON p.[object_id] = qs.[object_id]
 CROSS APPLY sys.dm_exec_query_plan(qs.plan_handle) AS qp
-WHERE qs.database_id = DB_ID()
-AND DATEDIFF(Minute, qs.cached_time, GETDATE()) > 0
+--WHERE qs.database_id = DB_ID()
+WHERE DATEDIFF(Minute, qs.cached_time, GETDATE()) > 0
 ORDER BY qs.execution_count DESC OPTION (RECOMPILE);
