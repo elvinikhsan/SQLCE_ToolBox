@@ -5,10 +5,10 @@ DECLARE @temp AS TABLE
 		(ID INT IDENTITY(1,1) PRIMARY KEY CLUSTERED
 		,[DatabaseName] SYSNAME
 		--,SchemaName VARCHAR(100)
-		,[TableName] VARCHAR(250)
-		,IndexName VARCHAR(250)
-		,AllowRowLock BIT
-		,AllowPageLock BIT);
+		,[TableName] SYSNAME NULL
+		,IndexName SYSNAME NULL
+		,AllowRowLock BIT NULL
+		,AllowPageLock BIT NULL);
 
 DECLARE @count INT = 0;
 DECLARE @j INT =1;
