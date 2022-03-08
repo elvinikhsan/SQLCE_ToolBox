@@ -6,9 +6,11 @@ DECLARE @temp AS TABLE
 		,[DatabaseName] SYSNAME
 		,ActualStateDesc VARCHAR(20) NULL
 		,DesiredStateDesc VARCHAR(20) NULL
+		,ReadOnlyReason INT NULL
 		,IntervalLengthMins INT NULL
 		,CurrentStorageSizeMB INT NULL
 		,MaxStorageSizeMB INT NULL
+		,StaleQueryThreshold INT NULL
 		,QueryCaptureMode VARCHAR(20) NULL
 		,SizeBasedCleaneUpMode VARCHAR(20) NULL);
 
@@ -29,8 +31,8 @@ BEGIN
 		SELECT @dbname = DBName FROM @databases WHERE ID=@j;
 		SET @sqltext = 'USE ' + QUOTENAME(@dbname) + ';
 						SELECT ''' + REPLACE(@dbname, CHAR(39), CHAR(95)) + ''' AS [DatabaseName], 
-							   actual_state_desc, desired_state_desc, [interval_length_minutes],
-							   current_storage_size_mb, [max_storage_size_mb], 
+							   actual_state_desc, desired_state_desc, readonly_reason, [interval_length_minutes],
+							   current_storage_size_mb, [max_storage_size_mb], stale_query_threshold_days,
 							   query_capture_mode_desc, size_based_cleanup_mode_desc
 						FROM sys.database_query_store_options WITH (NOLOCK) OPTION (RECOMPILE);'
 
