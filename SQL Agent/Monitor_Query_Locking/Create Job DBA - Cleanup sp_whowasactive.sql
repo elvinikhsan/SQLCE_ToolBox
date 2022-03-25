@@ -86,7 +86,7 @@ EXEC @ReturnCode = msdb.dbo.sp_add_jobschedule @job_id=@jobId, @name=N'DBA - Cle
 		@freq_subday_type=1, 
 		@freq_subday_interval=0, 
 		@freq_relative_interval=0, 
-		@freq_recurrence_factor=1, 
+		@freq_recurrence_factor=4, 
 		@active_start_date=20201002, 
 		@active_end_date=99991231, 
 		@active_start_time=0, 
@@ -100,5 +100,4 @@ QuitWithRollback:
     IF (@@TRANCOUNT > 0) ROLLBACK TRANSACTION
 EndSave:
 GO
-
 
