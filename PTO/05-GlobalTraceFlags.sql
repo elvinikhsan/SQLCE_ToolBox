@@ -1,1 +1,1 @@
-DBCC TRACESTATUS (-1);
+DBCC TRACESTATUS (-1); --global trace
