@@ -18,15 +18,11 @@
 :SETVAR NODE3IP "172.18.0.3"
 -- the service account
 :SETVAR SQLSERVICE "CONTOSO\sqlserversvc"
--- the AG name
-:SETVAR AGNAME "AOAG1"
--- the database name
-:SETVAR DBNAME "DUMMYDB"
 
 PRINT 'Set SQLCMD variables done!';
 GO
 
-SELECT '$(DNS)' AS dns_name, '$(SQLSERVICE)' AS sqlservice_account, '$(AGNAME)' AS ag_name, '$(DBNAME)' AS dbs_name,
+SELECT '$(DNS)' AS dns_name, '$(SQLSERVICE)' AS sqlservice_account,
 	   '$(NODE1)' AS node1, '$(NODE1)$(DNS)' AS node1_fqdn, '$(NODE1IP)' AS node1_ip, 
 	   '$(NODE2)' AS node2, '$(NODE2)$(DNS)' AS node2_fqdn, '$(NODE2IP)' AS node2_ip, 
 	   '$(NODE3)' AS node3, '$(NODE3)$(DNS)' AS node3_fqdn, '$(NODE3IP)' AS node3_ip;
