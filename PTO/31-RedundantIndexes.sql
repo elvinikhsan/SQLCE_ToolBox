@@ -7,9 +7,9 @@ DECLARE @temp AS TABLE
 		,SchemaName SYSNAME
 		,[TableName] SYSNAME
 		,IndexName SYSNAME
-		,IndexCols SYSNAME
+		,IndexCols VARCHAR(MAX)
 		,RedundantIndexName SYSNAME
-		,RedundantIndexCols SYSNAME
+		,RedundantIndexCols VARCHAR(MAX)
 		,object_id INT
 		,index_id INT);
 

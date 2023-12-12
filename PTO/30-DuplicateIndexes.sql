@@ -8,7 +8,7 @@ DECLARE @temp AS TABLE
 		,[TableName] SYSNAME
 		,IndexName SYSNAME
 		,DuplicateIndexName SYSNAME
-		,IndexCols SYSNAME
+		,IndexCols VARCHAR(MAX)
 		,index_id INT
 		,object_id INT);
 
