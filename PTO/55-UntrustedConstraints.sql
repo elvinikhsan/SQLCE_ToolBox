@@ -1,7 +1,7 @@
 DECLARE @name SYSNAME; 
 DECLARE @sqlcommand AS TABLE (ID INT IDENTITY(1,1) PRIMARY KEY CLUSTERED, CommandText VARCHAR(MAX))
 DECLARE @databases AS TABLE (ID INT IDENTITY(1,1) PRIMARY KEY CLUSTERED, DBName SYSNAME)
-DECLARE @tblDRI AS TABLE (ID INT IDENTITY(1,1) PRIMARY KEY CLUSTERED, [database_name] SYSNAME, [schema_name] VARCHAR(100), [table_name] VARCHAR(200), [constraint_name] VARCHAR(200), [constraint_type] VARCHAR(10), alter_script VARCHAR(MAX))
+DECLARE @tblDRI AS TABLE (ID INT IDENTITY(1,1) PRIMARY KEY CLUSTERED, [database_name] SYSNAME, [schema_name] VARCHAR(100), [table_name] VARCHAR(MAX), [constraint_name] VARCHAR(MAX), [constraint_type] VARCHAR(10), alter_script VARCHAR(MAX))
 
 DECLARE @count INT = 0;
 DECLARE @j INT =1;

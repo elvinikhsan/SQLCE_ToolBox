@@ -4,11 +4,11 @@ DECLARE @databases AS TABLE (ID INT IDENTITY(1,1) PRIMARY KEY CLUSTERED, DBName 
 DECLARE @FKNoIndex AS TABLE 
 		(ID INT IDENTITY(1,1) PRIMARY KEY CLUSTERED
 		,[DatabaseName] SYSNAME
-		,SchemaName VARCHAR(100)
-		,[TableName] VARCHAR(250)
-		,ConstraintName VARCHAR(250)
-		,ReferencedSchemaName VARCHAR(100)
-		,ReferencedTableName VARCHAR(250));
+		,SchemaName SYSNAME
+		,[TableName] VARCHAR(MAX)
+		,ConstraintName VARCHAR(MAX)
+		,ReferencedSchemaName VARCHAR(MAX)
+		,ReferencedTableName VARCHAR(MAX));
 
 DECLARE @count INT = 0;
 DECLARE @j INT =1;

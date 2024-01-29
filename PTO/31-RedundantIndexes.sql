@@ -5,10 +5,10 @@ DECLARE @temp AS TABLE
 		(ID INT IDENTITY(1,1) PRIMARY KEY CLUSTERED
 		,[DatabaseName] SYSNAME
 		,SchemaName SYSNAME
-		,[TableName] SYSNAME
-		,IndexName SYSNAME
+		,[TableName] VARCHAR(MAX)
+		,IndexName VARCHAR(MAX)
 		,IndexCols VARCHAR(MAX)
-		,RedundantIndexName SYSNAME
+		,RedundantIndexName VARCHAR(MAX)
 		,RedundantIndexCols VARCHAR(MAX)
 		,object_id INT
 		,index_id INT);

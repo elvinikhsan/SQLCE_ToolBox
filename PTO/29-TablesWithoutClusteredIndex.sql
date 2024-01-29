@@ -4,8 +4,8 @@ DECLARE @databases AS TABLE (ID INT IDENTITY(1,1) PRIMARY KEY CLUSTERED, DBName 
 DECLARE @temp AS TABLE 
 		(ID INT IDENTITY(1,1) PRIMARY KEY CLUSTERED
 		,[DatabaseName] SYSNAME
-		,SchemaName VARCHAR(100)
-		,[TableName] VARCHAR(250)
+		,SchemaName SYSNAME
+		,[TableName] VARCHAR(MAX)
 		,ApproximateRows BIGINT
 		,IndexCount INT
 		,ColumnCount INT);

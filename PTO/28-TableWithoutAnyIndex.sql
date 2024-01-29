@@ -5,7 +5,7 @@ DECLARE @tblNoIndex AS TABLE
 		(ID INT IDENTITY(1,1) PRIMARY KEY CLUSTERED
 		,[DatabaseName] SYSNAME
 		,schemaName VARCHAR(100)
-		,[tableName] VARCHAR(250)
+		,[tableName] VARCHAR(MAX)
 		,ApproximateRows BIGINT
 		,ColumnCount INT);
 

@@ -5,9 +5,9 @@ DECLARE @temp AS TABLE
 		(ID INT IDENTITY(1,1) PRIMARY KEY CLUSTERED
 		,[DatabaseName] SYSNAME
 		,SchemaName SYSNAME
-		,[TableName] SYSNAME
-		,IndexName SYSNAME
-		,DuplicateIndexName SYSNAME
+		,[TableName] VARCHAR(MAX)
+		,IndexName VARCHAR(MAX)
+		,DuplicateIndexName VARCHAR(MAX)
 		,IndexCols VARCHAR(MAX)
 		,index_id INT
 		,object_id INT);

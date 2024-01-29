@@ -5,8 +5,8 @@ DECLARE @temp AS TABLE
 		(ID INT IDENTITY(1,1) PRIMARY KEY CLUSTERED
 		,[DatabaseName] SYSNAME
 		,SchemaName SYSNAME NULL
-		,TableName SYSNAME NULL
-		,IndexName SYSNAME NULL
+		,TableName VARCHAR(MAX) NULL
+		,IndexName VARCHAR(MAX) NULL
 		,IndexId INT NULL
 		,TypeDesc VARCHAR(25)
 		,Hypothetical BIT NULL);

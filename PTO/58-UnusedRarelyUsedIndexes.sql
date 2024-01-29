@@ -5,8 +5,8 @@ DECLARE @temp AS TABLE
 		(ID INT IDENTITY(1,1) PRIMARY KEY CLUSTERED
 		,[DatabaseName] SYSNAME
 		--,SchemaName VARCHAR(100)
-		,[TableName] VARCHAR(250)
-		,IndexName VARCHAR(250)
+		,[TableName] VARCHAR(MAX)
+		,IndexName VARCHAR(MAX)
 		,IndexType NVARCHAR(20)
 		,IndexSize BIGINT
 		,TotalWrites BIGINT
