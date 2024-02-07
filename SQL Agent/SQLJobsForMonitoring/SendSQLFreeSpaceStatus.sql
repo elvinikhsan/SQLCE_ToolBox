@@ -191,7 +191,7 @@ Add-Content $freeSpaceFileName "</table>"
 }
 writeHtmlFooter $freeSpaceFileName
 $date = ( get-date ).ToString(''yyyy/MM/dd'')
-sendEmail mail.admin@component.astra.co.id elvin.ikhsan@ag-it.com "TBSSVR-MPRA Disk Space Report - $Date" aop.component.astra.co.id $freeSpaceFileName
+sendEmail mail.admin@xxx.com dba@xxx.com "SERVER_NAME Disk Space Report - $Date" smptp.xxx.com $freeSpaceFileName
 
 
 ', 
