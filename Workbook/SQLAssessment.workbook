@@ -117,6 +117,28 @@
             "defaultValue": "value::1",
             "queryType": 0,
             "resourceType": "microsoft.operationalinsights/workspaces"
+          },
+          {
+            "id": "b9984c79-97c8-4e9a-93aa-9398e4a96e10",
+            "version": "KqlParameterItem/1.0",
+            "name": "ServerName",
+            "type": 2,
+            "description": "Select server names",
+            "isRequired": true,
+            "isGlobal": true,
+            "multiSelect": true,
+            "quote": "'",
+            "delimiter": ",",
+            "query": "SQLAssessmentRecommendation\r\n|where FocusArea != \"EnvironementFilter\"  and RecommendationResult == \"Failed\" and AssessmentId == '{AssessmentId}' and AffectedObjectName != ''\r\n| summarize by  AffectedObjectName\r\n| order by AffectedObjectName asc",
+            "typeSettings": {
+              "additionalResourceOptions": [
+                "value::all"
+              ],
+              "showDefault": false
+            },
+            "defaultValue": "value::all",
+            "queryType": 0,
+            "resourceType": "microsoft.operationalinsights/workspaces"
           }
         ],
         "style": "above",
@@ -198,7 +220,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "SQLAssessmentRecommendation\r\n|where FocusArea != \"EnvironementFilter\"  and RecommendationResult == \"Failed\"\r\nand TimeGenerated {TimeRange} and AssessmentId == '{AssessmentId}'\r\n| summarize by  Recommendation, FocusArea, RecommendationId, Description, Weight = (RecommendationScore/10)\r\n| order by Weight desc",
+              "query": "SQLAssessmentRecommendation\r\n|where FocusArea != \"EnvironementFilter\"  and RecommendationResult == \"Failed\"\r\nand TimeGenerated {TimeRange} and AssessmentId == '{AssessmentId}' and (AffectedObjectName in~ ({ServerName}) or AffectedObjectName == '')\r\n| summarize by  Recommendation, FocusArea, RecommendationId, Description, Weight = (RecommendationScore/10)\r\n| order by Weight desc",
               "size": 0,
               "title": "Prioritized Recommendations",
               "noDataMessage": "No recommendations found",
@@ -274,8 +296,8 @@
                 "filter": true,
                 "sortBy": [
                   {
-                    "itemKey": "FocusArea",
-                    "sortOrder": 1
+                    "itemKey": "$gen_thresholds_Weight_4",
+                    "sortOrder": 2
                   }
                 ],
                 "labelSettings": [
@@ -303,8 +325,8 @@
               },
               "sortBy": [
                 {
-                  "itemKey": "FocusArea",
-                  "sortOrder": 1
+                  "itemKey": "$gen_thresholds_Weight_4",
+                  "sortOrder": 2
                 }
               ]
             },
@@ -319,7 +341,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "\r\nSQLAssessmentRecommendation\r\n| where FocusArea == \"{FocusArea}\" and TimeGenerated {TimeRange}\r\n| summarize arg_max(TimeGenerated, *) by RecommendationId, AffectedObjectName, AffectedObjectUniqueName\r\n|where  RecommendationResult == \"Failed\" and (Technology has \"\" or Technology == \"\")\r\n|summarize arg_max(TimeGenerated, *) by RecommendationId\r\n| extend High = (RecommendationScore >= 35)\r\n| extend Low = (RecommendationScore < 35)\r\n| extend status = iff(High==true,\"High Priority Recommendations\",\"Low Priority Recommendations\")\r\n| extend Passed = (RecommendationResult == \"Passed\")\r\n| summarize count() by status\r\n\r\n",
+              "query": "\r\nSQLAssessmentRecommendation\r\n| where FocusArea == \"{FocusArea}\" and TimeGenerated {TimeRange} and AssessmentId == '{AssessmentId}'\r\n| summarize arg_max(TimeGenerated, *) by RecommendationId, AffectedObjectName, AffectedObjectUniqueName\r\n|where  RecommendationResult == \"Failed\" and (Technology has \"\" or Technology == \"\")\r\n|summarize arg_max(TimeGenerated, *) by RecommendationId\r\n| extend High = (RecommendationScore >= 35)\r\n| extend Low = (RecommendationScore < 35)\r\n| extend status = iff(High==true,\"High Priority Recommendations\",\"Low Priority Recommendations\")\r\n| extend Passed = (RecommendationResult == \"Passed\")\r\n| summarize count() by status\r\n\r\n",
               "size": 0,
               "title": "{FocusArea}",
               "queryType": 0,
