@@ -129,7 +129,7 @@
             "multiSelect": true,
             "quote": "'",
             "delimiter": ",",
-            "query": "SQLAssessmentRecommendation\r\n|where FocusArea != \"EnvironementFilter\"  and RecommendationResult == \"Failed\" and AssessmentId == '{AssessmentId}' and AffectedObjectName != ''\r\n| summarize by  AffectedObjectName\r\n| order by AffectedObjectName asc",
+            "query": "SQLAssessmentRecommendation\r\n|where FocusArea != \"EnvironementFilter\"  and RecommendationResult == \"Failed\" and AssessmentId == '{AssessmentId}' and AffectedObjectName != ''\r\n| summarize by AffectedObjectName\r\n| extend AffectedObjectName = replace_string(AffectedObjectName,@'\\',@'\\\\')\r\n| order by AffectedObjectName asc",
             "typeSettings": {
               "additionalResourceOptions": [
                 "value::all"
@@ -138,7 +138,10 @@
             },
             "defaultValue": "value::all",
             "queryType": 0,
-            "resourceType": "microsoft.operationalinsights/workspaces"
+            "resourceType": "microsoft.operationalinsights/workspaces",
+            "value": [
+              "TBS-DB-CORE-01.PROGRESS.TAF.ID"
+            ]
           }
         ],
         "style": "above",
@@ -220,7 +223,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "SQLAssessmentRecommendation\r\n|where FocusArea != \"EnvironementFilter\"  and RecommendationResult == \"Failed\"\r\nand TimeGenerated {TimeRange} and AssessmentId == '{AssessmentId}'and (AffectedObjectName in~ (@{ServerName}) or AffectedObjectName == '')\r\n| summarize by  Recommendation, FocusArea, RecommendationId, Description, Weight = (RecommendationScore/10)\r\n| order by Weight desc",
+              "query": "SQLAssessmentRecommendation\r\n| where FocusArea != \"EnvironementFilter\"  and RecommendationResult == \"Failed\"\r\nand TimeGenerated {TimeRange} and AssessmentId == '{AssessmentId}'and (AffectedObjectName in~ ({ServerName}) or AffectedObjectName == '')\r\n| summarize by  Recommendation, FocusArea, RecommendationId, Description, Weight = (RecommendationScore/10)\r\n| order by Weight desc",
               "size": 0,
               "title": "Prioritized Recommendations",
               "noDataMessage": "No recommendations found",
@@ -724,7 +727,7 @@
     }
   ],
   "fallbackResourceIds": [
-    "/subscriptions/c66587c2-b21d-401d-80db-c1edf03a7502/resourceGroups/rg-oda/providers/Microsoft.OperationalInsights/workspaces/lw-oda2"
+    "/subscriptions/75cbc97e-898e-48fc-a134-cf2630ea8ca5/resourceGroups/rg_ondemandassessment/providers/Microsoft.OperationalInsights/workspaces/law-oda"
   ],
   "fromTemplateId": "community-Workbooks/ServicesHub/AtResource/SQLAssessmentWorkbookTemplate",
   "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
