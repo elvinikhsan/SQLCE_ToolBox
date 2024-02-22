@@ -61,7 +61,7 @@
               "durationMs": 86400000
             },
             "value": {
-              "durationMs": 604800000
+              "durationMs": 2592000000
             },
             "label": "Time Range"
           },
@@ -220,7 +220,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "SQLAssessmentRecommendation\r\n|where FocusArea != \"EnvironementFilter\"  and RecommendationResult == \"Failed\"\r\nand TimeGenerated {TimeRange} and AssessmentId == '{AssessmentId}' and (AffectedObjectName in~ ({ServerName}) or AffectedObjectName == '')\r\n| summarize by  Recommendation, FocusArea, RecommendationId, Description, Weight = (RecommendationScore/10)\r\n| order by Weight desc",
+              "query": "SQLAssessmentRecommendation\r\n|where FocusArea != \"EnvironementFilter\"  and RecommendationResult == \"Failed\"\r\nand TimeGenerated {TimeRange} and AssessmentId == '{AssessmentId}'and (AffectedObjectName in~ (@{ServerName}) or AffectedObjectName == '')\r\n| summarize by  Recommendation, FocusArea, RecommendationId, Description, Weight = (RecommendationScore/10)\r\n| order by Weight desc",
               "size": 0,
               "title": "Prioritized Recommendations",
               "noDataMessage": "No recommendations found",
@@ -724,7 +724,7 @@
     }
   ],
   "fallbackResourceIds": [
-    "/subscriptions/75cbc97e-898e-48fc-a134-cf2630ea8ca5/resourceGroups/rg_ondemandassessment/providers/Microsoft.OperationalInsights/workspaces/law-oda"
+    "/subscriptions/c66587c2-b21d-401d-80db-c1edf03a7502/resourceGroups/rg-oda/providers/Microsoft.OperationalInsights/workspaces/lw-oda2"
   ],
   "fromTemplateId": "community-Workbooks/ServicesHub/AtResource/SQLAssessmentWorkbookTemplate",
   "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
