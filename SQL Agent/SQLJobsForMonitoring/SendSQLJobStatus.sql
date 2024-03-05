@@ -178,7 +178,7 @@ SET @tableHTML =
 
 EXEC msdb.dbo.sp_send_dbmail
 				@profile_name = ''yourmailprofile'', --- this is the database mail profile name
-				@recipients = ''elvin.ikhsan@company.com'',
+				@recipients = ''john.doe@xxx.com; jane.doe@xxx.com'',
 				@body = @tableHTML,
 				@body_format = ''HTML'';
 END

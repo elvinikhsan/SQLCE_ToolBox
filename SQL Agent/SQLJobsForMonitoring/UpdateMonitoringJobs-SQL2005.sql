@@ -31,8 +31,8 @@ SET @tableHTML =
     N''</table>'' ;
 
 EXEC msdb.dbo.sp_send_dbmail
-				@profile_name = ''AOPSQLMailAdmin'', --- this is my database mail profile name
-				@recipients = ''elvin.ikhsan@ag-it.com; dwi.suharto@ag-it.com; nugroho@ag-it.com'',
+				@profile_name = ''SQLMailAdmin'', --- this is my database mail profile name
+				@recipients = ''john.doe@xxx.com; jane.doe@xxx.com'',
 				@Subject = ''SQL Server Message - Database Status'',
 				@body = @tableHTML,
 				@body_format = ''HTML'';
@@ -87,11 +87,11 @@ EXEC msdb.dbo.sp_update_jobstep @job_id=@jobid, @step_id=1 ,
  N''</table><BR><BR></body></html>'' 
 
  
- EXEC msdb.dbo.sp_send_dbmail @recipients = ''elvin.ikhsan@ag-it.com; dwi.suharto@ag-it.com; nugroho@ag-it.com'',
+ EXEC msdb.dbo.sp_send_dbmail @recipients = ''john.doe@xxx.com; jane.doe@xxx.com'',
  @subject = ''SQL Server Message - Database and Recovery Model'', 
  @body = @tableHTML, 
  @body_format = ''HTML'', 
- @profile_name = ''AOPSQLMailAdmin'';
+ @profile_name = ''SQLMailAdmin'';
  
  END
 
@@ -250,8 +250,8 @@ SET @tableHTML =
     N''</table>'' ;
 
 EXEC msdb.dbo.sp_send_dbmail
-				@profile_name = ''AOPSQLMailAdmin'', --- this is my database mail profile name
-				@recipients = ''elvin.ikhsan@ag-it.com; dwi.suharto@ag-it.com; nugroho@ag-it.com'',
+				@profile_name = ''SQLMailAdmin'', --- this is my database mail profile name
+				@recipients = ''john.doe@xxx.com; jane.doe@xxx.com'',
 				@subject = ''SQL Server Message - Jobs Status'',
 				@body = @tableHTML,
 				@body_format = ''HTML'';
@@ -307,8 +307,8 @@ SET @tableHTML =
     N''</table>'' ;
 
 EXEC msdb.dbo.sp_send_dbmail
-				@profile_name = ''AOPSQLMailAdmin'', --- this is my database mail profile name
-				@recipients = ''elvin.ikhsan@ag-it.com; dwi.suharto@ag-it.com; nugroho@ag-it.com'',
+				@profile_name = ''SQLMailAdmin'', --- this is my database mail profile name
+				@recipients = ''john.doe@xxx.com; jane.doe@xxx.com'',
 				@Subject = ''SQL Server Message - Log Size Status'',
 				@body = @tableHTML,
 				@body_format = ''HTML'';
@@ -611,8 +611,8 @@ RIGHT(''00''+RTRIM(CONVERT(CHAR(2),DATEDIFF(second,login_time,getdate())%86400%3
     N''</table>'' ;
 
 EXEC msdb.dbo.sp_send_dbmail
-				@profile_name = ''AOPSQLMailAdmin'', --- this is my database mail profile name
-				@recipients = ''elvin.ikhsan@ag-it.com; dwi.suharto@ag-it.com; nugroho@ag-it.com'',
+				@profile_name = ''SQLMailAdmin'', --- this is my database mail profile name
+				@recipients = ''john.doe@xxx.com; jane.doe@xxx.com'',
 				@Subject = ''SQL Server Message - UpTime Status'',
 				@body = @tableHTML,
 				@body_format = ''HTML'';
@@ -654,8 +654,8 @@ SET @tableHTML =
     N''</table>'' ;
 
 EXEC msdb.dbo.sp_send_dbmail
-				@profile_name = ''AOPSQLMailAdmin'', --- this is my database mail profile name
-				@recipients = ''elvin.ikhsan@ag-it.com; dwi.suharto@ag-it.com; nugroho@ag-it.com'',
+				@profile_name = ''SQLMailAdmin'', --- this is my database mail profile name
+				@recipients = ''john.doe@xxx.com; jane.doe@xxx.com'',
 				@Subject = ''SQL Server Message - Disk Free Space Status'',
 				@body = @tableHTML,
 				@body_format = ''HTML'';

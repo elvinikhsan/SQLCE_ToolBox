@@ -72,8 +72,8 @@ SET @tableHTML =
     N''</table>'' ;
 
 EXEC msdb.dbo.sp_send_dbmail
-				@profile_name = ''AOPSQLMailAdmin'', --- this is my database mail profile name
-				@recipients = ''elvin.ikhsan@ag-it.com'',
+				@profile_name = ''SQLMailAdmin'', --- this is my database mail profile name
+				@recipients = ''john.doe@xxx.com; jane.doe@xxx.com'',
 				@Subject = ''SQL Server Message - Log Size Status'',
 				@body = @tableHTML,
 				@body_format = ''HTML'';
