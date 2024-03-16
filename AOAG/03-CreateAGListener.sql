@@ -10,10 +10,10 @@
 /****************************************************************/
 /* Declare variables */
 -- the AG name
-:SETVAR AGNAME "AOAG1"
+:SETVAR AGNAME "AOAG01"
 -- the listener name and IP address(es)
 :SETVAR ISMULTISUBNET "1"
-:SETVAR LISTNR "AOAG1LISTNR"
+:SETVAR LISTNR "AOAG01LISTNR"
 :SETVAR LISTNRIP1 "10.0.0.11"
 :SETVAR LISTNRIP1NETMASK "255.255.255.0"
 :SETVAR LISTNRIP2 "172.16.0.11"
