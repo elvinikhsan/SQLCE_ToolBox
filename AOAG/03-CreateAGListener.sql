@@ -26,12 +26,6 @@ SELECT '$(AGNAME)' AS ag_name, '$(LISTNR)' AS listnr_name, '$(LISTNRIP1)' AS lis
 	   '$(LISTNRIP2)' AS listnr_ip2, '$(LISTNRIP2NETMASK)' AS listnr_ip2_mask;
 
 GO
-
-/* Now we need to turn our trace flag back off */
-RAISERROR('Turning off TRACE 9567...',0,1) WITH NOWAIT;
-DBCC TRACEOFF (9567, -1);
-RAISERROR('TRACE 9567 is turned off.',0,1) WITH NOWAIT;
-GO
 /* Here we create a listener for our AG. If you have issues creating the listener check permissions in AD. */
 RAISERROR('Creating availability group listener...',0,1) WITH NOWAIT;
 GO
