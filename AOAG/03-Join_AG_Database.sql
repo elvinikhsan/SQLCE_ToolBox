@@ -12,6 +12,7 @@
 -- The AG name
 :SETVAR AGNAME "AOAG01"
 -- The secondary replicas name
+:SETVAR NODE01 "NODE01"
 :SETVAR NODE02 "NODE02"
 :SETVAR NODE03 "NODE03"
 -- The database name
@@ -126,4 +127,7 @@ RAISERROR('Joining database $(DBNAME) in $(NODE03) to $(AGNAME)...',0,1) WITH NO
 ALTER DATABASE [$(DBNAME)] SET HADR AVAILABILITY GROUP = [$(AGNAME)];
 
 RAISERROR('Joining database $(DBNAME) is completed...',0,1) WITH NOWAIT;
+GO
+:CONNECT $(NODE01)
+RAISERROR('Connecting back to primary $(NODE01)...',0,1) WITH NOWAIT;
 GO
