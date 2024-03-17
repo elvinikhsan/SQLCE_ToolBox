@@ -1,17 +1,14 @@
-/*** WARNING! This script is only for new AG installation only!! ***/
-/*** DO NOT use the script on an already running AG environment! ***/
+/*** WARNING! This script is intended for PoC Environment! ***/
+/*** DO NOT run the script in Production environment without testing! ***/
 
 /***************** PLEASE ENABLE SQLCMD MODE!! ******************/
--- make sure to change the variables values accordingly
--- please wait until all replicas are synchronized
--- you can check the seeding process with this dmv
--- SELECT * FROM sys.dm_hadr_physical_seeding_stats;
--- SELECT * FROM sys.dm_hadr_automatic_seeding;
+-- Change the variables values accordingly to match the environment
 /****************************************************************/
+
 /* Declare variables */
--- the AG name
+-- The AG name
 :SETVAR AGNAME "AOAG01"
--- the listener name and IP address(es)
+-- The listener name and IP address(es)
 :SETVAR ISMULTISUBNET "1"
 :SETVAR LISTNR "AOAG01LISTNR"
 :SETVAR LISTNRIP1 "10.0.0.11"

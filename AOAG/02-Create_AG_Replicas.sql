@@ -1,21 +1,26 @@
+/*** WARNING! This script is intended for PoC Environment! ***/
+/*** DO NOT run the script in Production environment without testing! ***/
+
 /***************** PLEASE ENABLE SQLCMD MODE!! ******************/
--- make sure to change the variables values accordingly
--- make sure you have performed the FULL backup of the database
+-- Change the variables values accordingly to match the environment
+-- Make sure you have performed the FULL/LOG backup of the database 
+-- And restore the database to all secondary replicas WITH NORECOVERY
 /****************************************************************/
+
 /* Declare variables */
--- the domain name
+-- The domain name
 :SETVAR DNS ".contoso.com"
--- the nodes name
+-- The nodes name
 :SETVAR NODE01 "NODE01"
 :SETVAR NODE02 "NODE02"
 :SETVAR NODE03 "NODE03"
--- the ip addresses for mirroring endpoint
+-- The ip addresses for mirroring endpoint
 :SETVAR NODE01IP "10.0.1.1"
 :SETVAR NODE02IP "10.0.1.2"
 :SETVAR NODE03IP "172.18.0.3"
--- the AG name
+-- The AG name
 :SETVAR AGNAME "AOAG01"
--- the database name
+-- The database name
 :SETVAR DBNAME "DUMMYDB"
 
 PRINT 'Set SQLCMD variables done!';
@@ -32,7 +37,7 @@ GO
 GO
 USE [master]
 GO
-RAISERROR('Creating always on availability group...',0,1) WITH NOWAIT;
+RAISERROR('Creating always on availability group $(AGNAME)...',0,1) WITH NOWAIT;
 GO
 DECLARE @sqlStr NVARCHAR(MAX);
 DECLARE @mirrorTcpPort AS INT;
@@ -53,14 +58,14 @@ GO
 RAISERROR('Always on avaibility group created...',0,1) WITH NOWAIT;
 GO
 :CONNECT $(NODE02)
-RAISERROR('Joining NODE01...',0,1) WITH NOWAIT;
+RAISERROR('Joining $(NODE02)...',0,1) WITH NOWAIT;
 GO
 ALTER AVAILABILITY GROUP [$(AGNAME)] JOIN;
 GO
 ALTER AVAILABILITY GROUP [$(AGNAME)] GRANT CREATE ANY DATABASE;
 GO
 :CONNECT $(NODE03)
-RAISERROR('Joining NODE03...',0,1) WITH NOWAIT;
+RAISERROR('Joining $(NODE03)...',0,1) WITH NOWAIT;
 GO
 ALTER AVAILABILITY GROUP [$(AGNAME)] JOIN;
 GO

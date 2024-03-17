@@ -1,17 +1,18 @@
-/*** WARNING! This script is only for new AG installation only!! ***/
-/*** DO NOT use the script on an already running AG environment! ***/
+/*** WARNING! This script is intended for PoC Environment! ***/
+/*** DO NOT run the script in Production environment without testing! ***/
 
 /***************** PLEASE ENABLE SQLCMD MODE!! ******************/
--- make sure to change the variables values accordingly
+-- Change the variables values accordingly to match the environment
 /****************************************************************/
+
 /* Declare variables */
--- the domain name
+-- The domain name
 :SETVAR DNS ".contoso.com"
--- the nodes name
+-- The nodes name
 :SETVAR NODE01 "NODE01"
 :SETVAR NODE02 "NODE02"
 :SETVAR NODE03 "NODE03"
--- the AG name
+-- The AG name
 :SETVAR AGNAME "AOAG01"
 
 PRINT 'Set SQLCMD variables done!';

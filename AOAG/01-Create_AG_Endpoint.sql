@@ -1,22 +1,24 @@
-/*** WARNING! This script is only for new AG installation only!! ***/
-/*** DO NOT use the script on an already running AG environment! ***/
+/*** WARNING! This script is intended for PoC Environment! ***/
+/*** DO NOT run the script in Production environment without testing! ***/
 
 /***************** PLEASE ENABLE SQLCMD MODE!! ******************/
--- make sure to change the variables values accordingly
--- make sure you have performed the FULL backup of the database
+-- Change the variables values accordingly to match the environment
+-- Make sure you have performed the FULL/LOG backup of the database 
+-- And restore the database to all secondary replicas WITH NORECOVERY
 /****************************************************************/
+
 /* Declare variables */
--- the domain name
+-- The domain name
 :SETVAR DNS ".contoso.com"
--- the nodes name
+-- The nodes name
 :SETVAR NODE01 "NODE01"
 :SETVAR NODE02 "NODE02"
 :SETVAR NODE03 "NODE03"
--- the ip addresses for mirroring endpoint
+-- The ip addresses for mirroring endpoint
 :SETVAR NODE01IP "10.0.1.1"
 :SETVAR NODE02IP "10.0.1.2"
 :SETVAR NODE03IP "172.18.0.3"
--- the service account
+-- The service account
 :SETVAR SQLSERVICE "CONTOSO\sqlservice"
 
 PRINT 'Set SQLCMD variables done!';
@@ -131,7 +133,7 @@ ELSE RAISERROR('Database mirroring endpoint already exists...',0,1) WITH NOWAIT;
 GO
 /* Enable/start XEvent AlwaysOn */
 :CONNECT $(NODE01)
-RAISERROR('Enabling always on xevent session on NODE01...',0,1) WITH NOWAIT;
+RAISERROR('Enabling always on xevent session on $(NODE01)...',0,1) WITH NOWAIT;
 GO
 IF EXISTS(SELECT * FROM sys.server_event_sessions WHERE name='AlwaysOn_health')
 BEGIN
@@ -143,7 +145,7 @@ ALTER EVENT SESSION [AlwaysOn_health] ON SERVER STATE=START;
 END
 GO
 :CONNECT $(NODE02)
-RAISERROR('Enabling always on xevent session on NODE02...',0,1) WITH NOWAIT;
+RAISERROR('Enabling always on xevent session on $(NODE02)...',0,1) WITH NOWAIT;
 GO
 IF EXISTS(SELECT * FROM sys.server_event_sessions WHERE name='AlwaysOn_health')
 BEGIN
@@ -155,7 +157,7 @@ ALTER EVENT SESSION [AlwaysOn_health] ON SERVER STATE=START;
 END
 GO
 :CONNECT $(NODE03)
-RAISERROR('Enabling always on xevent session on NODE03...',0,1) WITH NOWAIT;
+RAISERROR('Enabling always on xevent session on $(NODE03)...',0,1) WITH NOWAIT;
 GO
 IF EXISTS(SELECT * FROM sys.server_event_sessions WHERE name='AlwaysOn_health')
 BEGIN
