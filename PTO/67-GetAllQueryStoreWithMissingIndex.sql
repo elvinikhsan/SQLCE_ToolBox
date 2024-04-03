@@ -1,5 +1,5 @@
 SELECT TOP 20
-    qsq.query_id,
+    qsq.query_id, qsq.object_id, OBJECT_NAME(qsq.object_id) AS [object_name],
     SUM(qrs.count_executions) * AVG(qrs.avg_logical_io_reads) as est_logical_reads,
     SUM(qrs.count_executions) AS sum_executions,
     AVG(qrs.avg_logical_io_reads) AS avg_avg_logical_io_reads,
@@ -16,9 +16,7 @@ JOIN sys.query_store_runtime_stats qrs on
     qsp.plan_id = qrs.plan_id
 JOIN sys.query_store_runtime_stats_interval qsrsi on 
     qrs.runtime_stats_interval_id=qsrsi.runtime_stats_interval_id
-WHERE    
-    qsp.query_plan like N'%<MissingIndexes>%'
-    and qsrsi.start_time >= DATEADD(HH, -48, SYSDATETIME())
-GROUP BY qsq.query_id, qsq.query_hash
+WHERE qsq.object_id >= 1 and qsp.query_plan like N'%<MissingIndexes>%'
+GROUP BY qsq.query_id, qsq.object_id, OBJECT_NAME(qsq.object_id), qsq.query_hash
 ORDER BY est_logical_reads DESC;
 GO
