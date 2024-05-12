@@ -34,7 +34,7 @@ EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'DBA_Upda
 @Databases = ''USER_DATABASES'', -- all user databases
 @UpdateStatistics = ''ALL'', -- all indexes/columns
 --@OnlyModifiedStatistics = ''Y'', -- only if the rows has been modified
-@StatisticsModificationLevel = 10, -- percentage of modification to rowcount ratio
+@StatisticsModificationLevel = 5, -- percentage of modification to rowcount ratio
 @TimeLimit = 14400; -- in seconds (4 hours), stop executing command after reaching this duration ', 
 		@database_name=N'master', 
 		@flags=0
