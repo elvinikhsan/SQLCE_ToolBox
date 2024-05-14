@@ -1,194 +1,79 @@
-USE master
-
+USE msdb;
 GO
-
-CREATE  FUNCTION fn_freq_interval_desc(@freq_interval INT)  
-RETURNS VARCHAR(1000)  
-AS  
-BEGIN  
-   DECLARE @result VARCHAR(1000)  
-
-   SET @result = ''
-	   
-   IF (@freq_interval & 1 = 1)  
-      SET @result = 'Sunday, '  
-   IF (@freq_interval & 2 = 2)  
-      SET @result = @result + 'Monday, '  
-   IF (@freq_interval & 4 = 4)  
-      SET @result = @result + 'Tuesday, '  
-   IF (@freq_interval & 8 = 8)  
-      SET @result = @result + 'Wednesday, '  
-   IF (@freq_interval & 16 = 16)  
-      SET @result = @result + 'Thursday, '  
-   IF (@freq_interval & 32 = 32)  
-      SET @result = @result + 'Friday, '  
-   IF (@freq_interval & 64 = 64)  
-      SET @result = @result + 'Saturday, '  
-
-   RETURN(LEFT(@result,LEN(@result)-1))  
-END   
-
-GO
-
-CREATE FUNCTION fn_Time2Str(@time INT)
-RETURNS VARCHAR(10)
-AS
-BEGIN
-   DECLARE @strtime CHAR(6)
-   SET @strtime = RIGHT('000000' + CONVERT(VARCHAR,@time),6)
-
-   RETURN LEFT(@strtime,2) + ':' + SUBSTRING(@strtime,3,2) + ':' + RIGHT(@strtime,2)
-END
-
-GO	
-
-CREATE FUNCTION fn_Date2Str(@date INT)
-RETURNS VARCHAR(10)
-AS
-BEGIN
-   DECLARE @strdate CHAR(8)
-   SET @strdate = LEFT(CONVERT(VARCHAR,@date) + '00000000', 8)
-
-   RETURN RIGHT(@strdate,2) + '/' + SUBSTRING(@strdate,5,2) + '/' + LEFT(@strdate,4) 
-END
-GO
-
-DECLARE @Filter CHAR(1)
-SET @Filter = 'A'
-
-
-DECLARE @sql VARCHAR(8000)
-DECLARE @is_sysadmin INT
-DECLARE @job_owner   sysname
-
-IF OBJECT_ID('tempdb..#xp_results') IS NOT NULL
-BEGIN
-    DROP TABLE #xp_results
-END
-
-
-CREATE TABLE #xp_results (
-     job_id                UNIQUEIDENTIFIER NOT NULL,
-     last_run_date         INT              NOT NULL,
-     last_run_time         INT              NOT NULL,
-     next_run_date         INT              NOT NULL,
-     next_run_time         INT              NOT NULL,
-     next_run_schedule_id  INT              NOT NULL,
-     requested_to_run      INT              NOT NULL, 
-     request_source        INT              NOT NULL,
-     request_source_id     sysname          COLLATE database_default NULL,
-     running               INT              NOT NULL, 
-     current_step          INT              NOT NULL,
-     current_retry_attempt INT              NOT NULL,
-     job_state             INT              NOT NULL)
-
-
-
-SELECT @is_sysadmin = ISNULL(IS_SRVROLEMEMBER(N'sysadmin'), 0)
-SELECT @job_owner = SUSER_SNAME()
-
-INSERT INTO #xp_results
-    EXECUTE master.dbo.xp_sqlagent_enum_jobs @is_sysadmin, @job_owner
-	
-SET @sql = '
 SELECT 
-  j.Name AS JobName
-, c.Name AS Category
-, CASE j.enabled WHEN 1 THEN ''Yes'' else ''No'' END as Enabled
-, CASE s.enabled WHEN 1 THEN ''Yes'' else ''No'' END as Scheduled
-, j.Description 
-, CASE s.freq_type 
-     WHEN  1 THEN ''Once''
-     WHEN  4 THEN ''Daily''
-     WHEN  8 THEN ''Weekly''
-     WHEN 16 THEN ''Monthly''
-     WHEN 32 THEN ''Monthly relative''
-     WHEN 64 THEN ''When SQL Server Agent starts'' 
-     WHEN 128 THEN ''Start whenever the CPU(s) become idle'' END as Occurs 	
-, CASE s.freq_type 
-     WHEN  1 THEN ''O''
-     WHEN  4 THEN ''Every '' 
-        + convert(varchar,s.freq_interval) 
-        + '' day(s)''
-     WHEN  8 THEN ''Every '' 
-        + convert(varchar,s.freq_recurrence_factor) 
-        + '' weeks(s) on '' 
-        + master.dbo.fn_freq_interval_desc(s.freq_interval)					  
-     WHEN 16 THEN ''Day '' + convert(varchar,s.freq_interval) 
-        + '' of every '' 
-        + convert(varchar,s.freq_recurrence_factor) 
-        + '' month(s)'' 
-     WHEN 32 THEN ''The '' 
-        + CASE s.freq_relative_interval	
-            WHEN  1 THEN ''First''
-            WHEN  2 THEN ''Second''
-            WHEN  4 THEN ''Third''	
-            WHEN  8 THEN ''Fourth''
-            WHEN 16 THEN ''Last'' END 
-        + CASE s.freq_interval 
-            WHEN  1 THEN '' Sunday''
-            WHEN  2 THEN '' Monday''
-            WHEN  3 THEN '' Tuesday''
-            WHEN  4 THEN '' Wednesday''
-            WHEN  5 THEN '' Thursday''
-            WHEN  6 THEN '' Friday''
-            WHEN  7 THEN '' Saturday''
-            WHEN  8 THEN '' Day''
-            WHEN  9 THEN '' Weekday''
-            WHEN 10 THEN '' Weekend Day'' END 
-        + '' of every '' 
-        + convert(varchar,s.freq_recurrence_factor) 
-        + '' month(s)'' END AS Occurs_detail	
-, CASE s.freq_subday_type 
-     WHEN 1 THEN ''Occurs once at '' 
-        + master.dbo.fn_Time2Str(s.active_start_time) 
-     WHEN 2 THEN ''Occurs every '' 
-        + convert(varchar,s.freq_subday_interval) 
-        + '' Seconds(s) Starting at '' 
-        + master.dbo.fn_Time2Str(s.active_start_time) 
-        + '' ending at '' 
-        + master.dbo.fn_Time2Str(s.active_end_time) 
-     WHEN 4 THEN ''Occurs every '' 
-        + convert(varchar,s.freq_subday_interval) 
-        + '' Minute(s) Starting at '' 
-        + master.dbo.fn_Time2Str(s.active_start_time) 
-        + '' ending at '' 
-        + master.dbo.fn_Time2Str(s.active_end_time) 
-     WHEN 8 THEN ''Occurs every '' 
-        + convert(varchar,s.freq_subday_interval) 
-        + '' Hour(s) Starting at '' 
-        + master.dbo.fn_Time2Str(s.active_start_time) 
-        + '' ending at '' 
-        + master.dbo.fn_Time2Str(s.active_end_time) END AS Frequency
-, CASE WHEN s.freq_type =  1 THEN ''On date: '' 
-          + master.dbo.fn_Date2Str(s.active_start_date) 
-          + '' At time: '' 
-          + master.dbo.fn_Time2Str(s.active_start_time)
-       WHEN s.freq_type < 64 THEN ''Start date: '' 
-          + master.dbo.fn_Date2Str(s.active_start_date) 
-          + '' end date: '' 
-          + master.dbo.fn_Date2Str(s.active_end_date) END as Duration
-, master.dbo.fn_Date2Str(xp.next_run_date) + '' '' 
-    + master.dbo.fn_Time2Str(xp.next_run_time) AS Next_Run_Date
-FROM  msdb.dbo.sysjobs j (NOLOCK)
-INNER JOIN msdb.dbo.sysjobschedules js (NOLOCK) ON j.job_id = js.job_id
-INNER JOIN msdb.dbo.sysschedules s (NOLOCK) ON js.schedule_id = s.schedule_id
-INNER JOIN msdb.dbo.syscategories c (NOLOCK) ON j.category_id = c.category_id
-INNER JOIN #xp_results xp (NOLOCK) ON j.job_id = xp.job_id
-WHERE 1 = 1 
-@Filter
-ORDER BY j.name'
-
-IF @Filter = 'Y'
-   SET @sql = REPLACE(@sql,'@Filter',' AND j.enabled = 1 ')
-ELSE
-IF @Filter = 'N'
-   SET @sql = REPLACE(@sql,'@Filter',' AND j.enabled = 0 ')
-ELSE
-IF @Filter = 'X'
-   SET @sql = REPLACE(@sql,'@Filter', 
-                            'AND s.active_end_date < convert(varchar(8),GetDate(),112) ')
-ELSE
-   SET @sql = REPLACE(@sql,'@Filter','')
-
-EXEC(@sql)
+    S.name AS JobName,
+    SS.name AS ScheduleName,                    
+    CASE(SS.freq_type)
+        WHEN 1  THEN 'Once'
+        WHEN 4  THEN 'Daily'
+        WHEN 8  THEN (CASE WHEN (SS.freq_recurrence_factor > 1) THEN  'Every ' + convert(varchar(3),SS.freq_recurrence_factor) + ' Weeks'  ELSE 'Weekly'  END)
+        WHEN 16 THEN (CASE WHEN (SS.freq_recurrence_factor > 1) THEN  'Every ' + convert(varchar(3),SS.freq_recurrence_factor) + ' Months' ELSE 'Monthly' END)
+        WHEN 32 THEN 'Every ' + convert(varchar(3),SS.freq_recurrence_factor) + ' Months' -- RELATIVE
+        WHEN 64 THEN 'SQL Startup'
+        WHEN 128 THEN 'SQL Idle'
+        ELSE '??'
+    END AS Frequency,  
+    CASE
+        WHEN (freq_type = 1)                       THEN 'One time only'
+        WHEN (freq_type = 4 and freq_interval = 1) THEN 'Every Day'
+        WHEN (freq_type = 4 and freq_interval > 1) THEN 'Every ' + convert(varchar(10),freq_interval) + ' Days'
+        WHEN (freq_type = 8) THEN (SELECT 'Weekly Schedule' = MIN(D1+ D2+D3+D4+D5+D6+D7 )
+                                    FROM (SELECT SS.schedule_id,
+                                                    freq_interval, 
+                                                    'D1' = CASE WHEN (freq_interval & 1  <> 0) THEN 'Sun ' ELSE '' END,
+                                                    'D2' = CASE WHEN (freq_interval & 2  <> 0) THEN 'Mon '  ELSE '' END,
+                                                    'D3' = CASE WHEN (freq_interval & 4  <> 0) THEN 'Tue '  ELSE '' END,
+                                                    'D4' = CASE WHEN (freq_interval & 8  <> 0) THEN 'Wed '  ELSE '' END,
+                                                'D5' = CASE WHEN (freq_interval & 16 <> 0) THEN 'Thu '  ELSE '' END,
+                                                    'D6' = CASE WHEN (freq_interval & 32 <> 0) THEN 'Fri '  ELSE '' END,
+                                                    'D7' = CASE WHEN (freq_interval & 64 <> 0) THEN 'Sat '  ELSE '' END
+                                                FROM msdb..sysschedules ss
+                                            WHERE freq_type = 8
+                                        ) AS F
+                                    WHERE schedule_id = SJ.schedule_id
+                                )
+        WHEN (freq_type = 16) THEN 'Day ' + convert(varchar(2),freq_interval) 
+        WHEN (freq_type = 32) THEN (SELECT  freq_rel + WDAY 
+                                    FROM (SELECT SS.schedule_id,
+                                                    'freq_rel' = CASE(freq_relative_interval)
+                                                                WHEN 1 THEN 'First'
+                                                                WHEN 2 THEN 'Second'
+                                                                WHEN 4 THEN 'Third'
+                                                                WHEN 8 THEN 'Fourth'
+                                                                WHEN 16 THEN 'Last'
+                                                                ELSE '??'
+                                                                END,
+                                                'WDAY'     = CASE (freq_interval)
+                                                                WHEN 1 THEN ' Sun'
+                                                                WHEN 2 THEN ' Mon'
+                                                                WHEN 3 THEN ' Tue'
+                                                                WHEN 4 THEN ' Wed'
+                                                                WHEN 5 THEN ' Thu'
+                                                                WHEN 6 THEN ' Fri'
+                                                                WHEN 7 THEN ' Sat'
+                                                                WHEN 8 THEN ' Day'
+                                                                WHEN 9 THEN ' Weekday'
+                                                                WHEN 10 THEN ' Weekend'
+                                                                ELSE '??'
+                                                                END
+                                            FROM msdb..sysschedules SS
+                                            WHERE SS.freq_type = 32
+                                            ) AS WS 
+                                    WHERE WS.schedule_id = SS.schedule_id
+                                    ) 
+    END AS Interval,
+    CASE (freq_subday_type)
+        WHEN 1 THEN   left(stuff((stuff((replicate('0', 6 - len(active_start_time)))+ convert(varchar(6),active_start_time),3,0,':')),6,0,':'),8)
+        WHEN 2 THEN 'Every ' + convert(varchar(10),freq_subday_interval) + ' seconds'
+        WHEN 4 THEN 'Every ' + convert(varchar(10),freq_subday_interval) + ' minutes'
+        WHEN 8 THEN 'Every ' + convert(varchar(10),freq_subday_interval) + ' hours'
+        ELSE '??'
+    END AS [Time],
+    CASE SJ.next_run_date
+        WHEN 0 THEN cast('n/a' as char(10))
+        ELSE convert(char(10), convert(datetime, convert(char(8),SJ.next_run_date)),120)  + ' ' + left(stuff((stuff((replicate('0', 6 - len(next_run_time)))+ convert(varchar(6),next_run_time),3,0,':')),6,0,':'),8)
+    END AS NextRunTime
+FROM msdb.dbo.sysjobs S
+LEFT JOIN msdb.dbo.sysjobschedules SJ on S.job_id = SJ.job_id  
+LEFT JOIN msdb.dbo.sysschedules SS on SS.schedule_id = SJ.schedule_id
+ORDER BY S.name
