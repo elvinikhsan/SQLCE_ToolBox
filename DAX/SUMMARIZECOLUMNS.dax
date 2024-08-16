@@ -24,3 +24,11 @@ SUMMARIZECOLUMNS (
     "Amount", [Sales Amount],
     "Qty", SUM ( Sales[Quantity] )
 )
+
+EVALUATE
+FILTER (
+ SUMMARIZECOLUMNS (
+ Customer[Name],
+ "SumOfSales", Sales[Sales Amount] ),
+ [SumOfSales] > 10000 && [Name] <> BLANK()
+)
