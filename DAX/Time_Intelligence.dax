@@ -1,0 +1,218 @@
+﻿//Calculated Date table
+Date =
+CALENDAR (
+DATE ( YEAR ( MIN ( Sales[Order Date] ) ), 1, 1 ),
+DATE ( YEAR ( MAX ( Sales[Order Date] ) ), 12, 31 )
+)
+-- OR CALENDARAUTO scans all the date columns, except for calculated columns
+Date = CALENDARAUTO()
+
+--Date table for fiscal years starting on July 1 and ending on June 30
+Date = CALENDARAUTO(6)
+
+Date =
+VAR MinYear = YEAR ( MIN ( Sales[Order Date] ) )
+VAR MaxYear = YEAR ( MAX ( Sales[Order Date] ) )
+RETURN
+FILTER (
+CALENDARAUTO ( ),
+YEAR ( [Date] ) >= MinYear &&
+YEAR ( [Date] ) <= MaxYear
+)
+
+Date =
+VAR MinYear = YEAR ( MIN ( Sales[Order Date] ) )
+VAR MaxYear = YEAR ( MAX ( Sales[Order Date] ) )
+RETURN
+ADDCOLUMNS (
+FILTER (
+CALENDARAUTO ( ),
+YEAR ( [Date] ) >= MinYear &&
+YEAR ( [Date] ) <= MaxYear
+),
+"Year", YEAR ( [Date] ),
+"Quarter Number", INT ( FORMAT ( [Date], "q" ) ),
+"Quarter", "Q" & INT ( FORMAT ( [Date], "q" ) ),
+"Month Number", MONTH ( [Date] ),
+"Month", FORMAT ( [Date], "mmmm" ),
+"Week Day Number", WEEKDAY ( [Date] ),
+"Week Day", FORMAT ( [Date], "dddd" ),
+"Year Month Number", YEAR ( [Date] ) * 100 + MONTH ( [Date] ),
+"Year Month", FORMAT ( [Date], "mmmm" ) & " " & YEAR ( [Date] ),
+"Year Quarter Number", YEAR ( [Date] ) * 100 + INT ( FORMAT ( [Date], "q" ) ),
+"Year Quarter", "Q" & FORMAT ( [Date], "q" ) & "-" & YEAR ( [Date] )
+)
+
+//using multiple relationships with a single date table
+Ordered Amount :=
+SUMX ( Sales, Sales[Net Price] * Sales[Quantity] )
+
+Delivered Amount :=
+CALCULATE (
+SUMX ( Sales, Sales[Net Price] * Sales[Quantity] ),
+USERELATIONSHIP ( Sales[Delivery Date], 'Date'[Date] )
+)
+
+//manual YearToDate Calculation 
+Sales Amount YTD :=
+VAR LastVisibleDate = MAX ( 'Date'[Date] )
+VAR CurrentYear = YEAR ( LastVisibleDate )
+VAR SetOfDatesYtd =
+FILTER (
+ALL ( 'Date'), -- added to make sure the existing filter on any column on date table is removed, 
+--it is automatically added if the table is marked as date table
+AND (
+'Date'[Date] <= LastVisibleDate,
+YEAR ( 'Date'[Date] ) = CurrentYear
+)
+)
+VAR Result
+CALCULATE (
+SUMX ( Sales, Sales[Net Price] * Sales[Quantity] ),
+SetOfDatesYtd
+)
+RETURN
+Result
+
+-- a simpler version using DATESYTD function, 
+-- same can be applied using DATESMTD, DATESQTD, for month and quarter to date
+Sales Amount YTD :=
+CALCULATE (
+SUMX ( Sales, Sales[Net Price] * Sales[Quantity] ),
+DATESYTD ( 'Date'[Date] )
+)
+
+-- the simples function using TOTALYTD, removing the need for CALCULATE
+YTD Sales :=
+TOTALYTD (
+[Sales Amount],
+'Date'[Date]
+)
+-- variations of same calculation
+QTD Sales := TOTALQTD ( [Sales Amount], 'Date'[Date] )
+QTD Sales := CALCULATE ( [Sales Amount], DATESQTD ( 'Date'[Date] ) )
+MTD Sales := TOTALMTD ( [Sales Amount], 'Date'[Date] )
+MTD Sales := CALCULATE ( [Sales Amount], DATESMTD ( 'Date'[Date] ) )
+Fiscal YTD Sales := TOTALYTD ( [Sales Amount], 'Date'[Date], "06-30" )
+Fiscal YTD Sales := CALCULATE ( [Sales Amount], DATESYTD ( 'Date'Date], "06-30" ) )
+-- to avoid ambiguity due to culture settings use YYYY-MM-DD format
+-- the year here in this format is ignored/doesn't matter, 
+-- it is just for the purpose of correctly determining end date of a fiscal year
+Fiscal YTD Sales := CALCULATE ( [Sales Amount], DATESYTD ( 'Date'[Date], "2018-06-30" ) )
+
+PY Sales := CALCULATE ( [Sales Amount], SAMEPERIODLASTYEAR ( 'Date'[Date] ) )
+-- is equal to
+PY Sales := CALCULATE( [Sales Amount], DATEADD ( 'Date'[Date], -1, YEAR ) )
+-- variations
+PQ Sales := CALCULATE ( [Sales Amount], DATEADD ( 'Date'[Date], -1, QUARTER ) )
+PM Sales := CALCULATE ( [Sales Amount], DATEADD ( 'Date'[Date], -1, MONTH ) )
+PD Sales := CALCULATE ( [Sales Amount], DATEADD ( 'Date'[Date], -1, DAY ) )
+-- calculate the whole previous year instead
+PY Total Sales := CALCULATE ( [Sales Amount], PARALLELPERIOD ( 'Date'[Date], -1, YEAR ) )
+-- or whole quarter
+PQ Total Sales := CALCULATE ( [Sales Amount], PARALLELPERIOD ( 'Date'[Date], -1, QUARTER ) )
+-- previous month only
+Last PM Sales :=
+CALCULATE ( [Sales Amount], PREVIOUSMONTH( 'Date'[Date] ) )
+-- other functions are PREVIOUSYEAR, PREVIOUSQUARTER, PREVIOUSMONTH, PREVIOUSDAY, 
+-- NEXTYEAR, NEXTQUARTER, NEXTMONTH, and NEXTDAY
+
+// Time intelligence functions are actually accepting table as parameter
+PY Sales :=
+CALCULATE (
+[Sales Amount],
+DATESYTD ( 'Date'[Date] )
+)
+-- is equivalent to
+PY Sales :=
+CALCULATE (
+[Sales Amount],
+DATESYTD ( CALCULATETABLE ( DISTINCT ( 'Date'[Date] ) ) )
+)
+
+PY YTD Sales :=
+CALCULATE (
+[Sales Amount],
+SAMEPERIODLASTYEAR ( DATESYTD ( 'Date'[Date] ) )
+)
+-- is equivalent to
+PY YTD Sales :=
+CALCULATE (
+[Sales Amount],
+DATESYTD ( SAMEPERIODLASTYEAR ( 'Date'[Date] ) )
+)
+-- also same
+PY YTD Sales :=
+CALCULATE (
+[YTD Sales], -- year to date measure
+SAMEPERIODLASTYEAR ( 'Date'[Date] )
+)
+
+-- calculate year over year (YOY) difference
+YOY Sales :=
+VAR CySales = [Sales Amount]
+VAR PySales = [PY Sales]
+VAR YoySales =
+IF (
+NOT ISBLANK ( CySales ) && NOT ISBLANK ( PySales ),
+CySales - PySales
+)
+RETURN
+YoySales
+
+YOY Sales% := DIVIDE ( [YOY Sales], [PY Sales] )
+
+-- comparing Year to date to previous year
+YTD Sales := TOTALYTD ( [Sales Amount], 'Date'[Date] )
+PY YTD Sales :=
+CALCULATE (
+[Sales Amount],
+DATESYTD ( SAMEPERIODLASTYEAR ( 'Date'[Date] ) )
+)
+YOY YTD Sales :=
+VAR CyYtdSales = [YTD Sales]
+VAR PyYtdSales = [PY YTD Sales]
+VAR YoyYtdSales =
+IF (
+NOT ISBLANK ( CyYtdSales ) && NOT ISBLANK ( PyYtdSales ),
+CyYtdSales - PyYtdSales
+)
+RETURN
+YoyYtdSales
+
+YOY YTD Sales% := DIVIDE ( [YOY YTD Sales], [PY YTD Sales] )
+
+-- moving annual total (MAT)
+MAT Sales :=
+CALCULATE ( -- Compute the sales amount in a new filter
+[Sales Amount], -- context modified by the next argument.
+DATESINPERIOD ( -- Returns a table containing
+'Date'[Date], -- Date[Date] values,
+MAX ( 'Date'[Date] ), -- starting from the last visible date
+-1, -- and going back 1
+YEAR -- year.
+)
+)
+-- equivalent to
+MAT Sales :=
+CALCULATE (
+[Sales Amount],
+DATESBETWEEN (
+'Date'[Date],
+NEXTDAY ( SAMEPERIODLASTYEAR ( LASTDATE ( 'Date'[Date] ) ) ),
+LASTDATE ( 'Date'[Date] )
+)
+)
+
+-- moving annual average (MAA)
+MAA Sales :=
+CALCULATE (
+DIVIDE ( [Sales Amount], DISTINCTCOUNT ( 'Date'[Year Month] ) ),
+DATESINPERIOD (
+'Date'[Date],
+MAX ( 'Date'[Date] ),
+-1,
+YEAR
+)
+)
+
