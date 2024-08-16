@@ -1,0 +1,150 @@
+﻿Sales Amount :=
+SUMX (
+Sales,
+Sales[Quantity] * Sales[Net Price]
+)
+
+Contoso Sales :=
+CALCULATE (
+[Sales Amount],
+FILTER (
+ALL ( 'Product'[Brand] ),
+'Product'[Brand] = "Contoso"
+)
+)
+
+
+All Category Sales :=
+CALCULATE ( -- Changes the filter context of
+[Sales Amount], -- the sales amount
+ALL ( 'Product'[Category] ) -- making ALL categories visible
+)
+
+Sales Pct :=
+VAR CurrentCategorySales =
+[Sales Amount]
+VAR AllCategoriesAndColorSales =
+CALCULATE (
+[Sales Amount],
+ALL ( 'Product'[Category] ), -- The two ALL conditions could also be replaced
+ALL ( 'Product'[Color] ) -- by ALL ( 'Product'[Category], 'Product'[Color] )
+)
+VAR Ratio =
+DIVIDE (
+CurrentCategorySales,
+AllCategoriesAndColorSales
+)
+RETURN
+Ratio
+
+
+Pct All Sales :=
+VAR CurrentCategorySales =
+[Sales Amount]
+VAR AllSales =
+CALCULATE (
+[Sales Amount],
+ALL ( Sales )
+)
+VAR Ratio =
+DIVIDE (
+CurrentCategorySales,
+AllSales
+)
+RETURN
+Ratio
+
+Pct All Sales CY :=
+VAR CurrentCategorySales =
+[Sales Amount]
+VAR AllSalesInCurrentYear =
+CALCULATE (
+[Sales Amount],
+ALL ( Sales ),
+VALUES ( 'Date'[Calendar Year] )
+)
+VAR Ratio =
+DIVIDE (
+CurrentCategorySales,
+AllSalesInCurrentYear
+)
+RETURN
+Ratio
+
+Audio Sales KeepFilters :=
+CALCULATE (
+[Sales Amount],
+KEEPFILTERS ( 'Product'[Category] = "Audio" )
+)
+
+KeepFilters Audio-Computers :=
+CALCULATE (
+[Sales Amount],
+KEEPFILTERS ( 'Product'[Category] IN { "Audio", "Computers" } )
+)
+
+//multiple filter arguments of CALCULATE are always merged with a logical AND
+Sales 10-100 :=
+CALCULATE (
+[Sales Amount],
+Sales[Net Price] >= 10,
+Sales[Net Price] <= 100
+)
+
+//you must use a single fi lter in case of a logical OR statement
+Sales Blue+Red :=
+CALCULATE (
+[Sales Amount],
+'Product'[Color] = "Red" || 'Product'[Color] = "Blue"
+)
+
+Sales Large Amount :=
+CALCULATE (
+[Sales Amount],
+FILTER (
+ALL ( Sales[Quantity], Sales[Net Price] ),
+Sales[Quantity] * Sales[Net Price] >= 1000
+)
+)
+
+Sales YB :=
+CALCULATE (
+CALCULATE (
+[Sales Amount],
+'Product'[Color] IN { "Yellow", "Black" }
+),
+'Product'[Color] IN { "Black", "Blue" }
+)
+
+Delivered Amount 2007 v3 :=
+CALCULATE (
+[Sales Amount],
+'Date'[Calendar Year] = "CY 2007",
+USERELATIONSHIP (
+Sales[Delivery Date],
+'Date'[Date]
+)
+)
+
+NumOfColors :=
+CALCULATE (
+DISTINCTCOUNT ( 'Product'[Color] ),
+CROSSFILTER ( Sales[ProductKey], 'Product'[ProductKey], BOTH )
+)
+
+All Years Sales :=
+CALCULATE (
+[Sales Amount],
+ALL ( 'Date'[Year] ) --ALL remove existing filter context on same column
+)
+
+//ALLSELECTED restores the filter context outside of the current visual
+on the Product[Color] column.
+SalesPct :=
+DIVIDE (
+[Sales],
+CALCULATE (
+[Sales],
+ALLSELECTED ( 'Product'[Color] )
+)
+)

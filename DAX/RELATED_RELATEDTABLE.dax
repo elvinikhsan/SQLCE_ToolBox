@@ -1,0 +1,20 @@
+﻿-- In calculated colum
+
+'Product'[Product Sales Amount Multiple Items] =
+SUMX (
+FILTER (
+RELATEDTABLE ( Sales ),
+Sales[Quantity] > 1
+),
+Sales[Quantity] * Sales[Unit Price]
+)
+
+-- in a measure
+RedSales :=
+SUMX (
+FILTER (
+Sales,
+RELATED ( 'Product'[Color] ) = "Red"
+),
+Sales[Quantity] * Sales[Net Price]
+)

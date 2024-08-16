@@ -1,0 +1,113 @@
+﻿Sales Amount :=
+SUMX (
+Sales,
+Sales[Quantity] * Sales[Net Price]
+)
+
+All Sales Amount :=
+SUMX (
+ALL ( Sales ),
+Sales[Quantity] * Sales[Net Price]
+)
+
+Sales Pct := DIVIDE ( [Sales Amount], [All Sales Amount] )
+
+
+Categories =
+ALL (
+'Product'[Category],
+'Product'[Subcategory]
+)
+
+ALL ( 'Product'[Product Name], 'Product'[Brand], 'Product'[Class] )
+ALLEXCEPT ( 'Product', 'Product'[ProductKey], 'Product'[Color] )
+
+
+
+NumOfAllColors := COUNTROWS ( ALL ( 'Product'[Color] ) )
+NumOfColors := COUNTROWS ( VALUES ( 'Product'[Color] ) )
+NumOfDistinctColors := COUNTROWS ( DISTINCT ( 'Product'[Color] ) )
+
+AvgSalesPerDistinctProduct :=
+DIVIDE (
+SUMX ( Sales, Sales[Quantity] * Sales[Net Price] ),
+COUNTROWS ( DISTINCT ( 'Product'[Product Code] ) )
+)
+AvgSalesPerDistinctKey :=
+DIVIDE (
+SUMX ( Sales, Sales[Quantity] * Sales[Net Price] ),
+COUNTROWS ( VALUES ( Sales[ProductKey] ) )
+)
+
+//VALUES ( 'Product'[Category], 'Product'[Subcategory] ) -- not supported
+//can be obtained by writing:
+SUMMARIZE ( 'Product', 'Product'[Category], 'Product'[Subcategory] )
+
+
+Brand Name :=
+IF (
+HASONEVALUE ( 'Product'[Brand] ),
+VALUES ( 'Product'[Brand] )
+)
+
+Brand Name := SELECTEDVALUE ( 'Product'[Brand], "Multiple brands" )
+
+[Brand Name] :=
+CONCATENATEX (
+VALUES ( 'Product'[Brand] ),
+'Product'[Brand],
+", "
+)
+
+Sales Pct :=
+DIVIDE (
+SUMX ( Sales, Sales[Quantity] * Sales[Net Price] ),
+SUMX ( ALLSELECTED ( Sales ), Sales[Quantity] * Sales[Net Price] )
+)
+
+Sales[UnitPriceVariance] = Sales[Unit Price] - RELATED ( 'Product'[Unit Price] )
+
+Product[NumberOfSales] =
+VAR SalesOfCurrentProduct = RELATEDTABLE ( Sales )
+RETURN
+COUNTROWS ( SalesOfCurrentProduct )
+
+SUMX (
+Sales,
+Sales[Quantity]
+* RELATED ( 'Product'[Unit Price] )
+* RELATED ( 'Product Category'[Discount] )
+)
+
+'Product'[UnitPriceRankDense] =
+VAR PriceOfCurrentProduct = 'Product'[Unit Price]
+VAR HigherPrices =
+FILTER (
+VALUES ( 'Product'[Unit Price] ),
+'Product'[Unit Price] > PriceOfCurrentProduct
+)
+RETURN
+COUNTROWS ( HigherPrices ) + 1
+
+
+NumOfAllRedProducts :=
+VAR AllRedProducts =
+FILTER (
+ALL ( 'Product' ),
+'Product'[Color] = "Red"
+)
+RETURN
+COUNTROWS ( AllRedProducts )
+
+Correct Average :=
+VAR CustomersAge =
+SUMMARIZE ( -- Existing combinations
+Sales, -- that exist in Sales
+Sales[CustomerKey], -- of the customer key and
+Sales[Customer Age] -- the customer age
+)
+RETURN
+AVERAGEX ( -- Iterate on list of
+CustomersAge, -- Customers/age in Sales
+Sales[Customer Age] -- and average the customer’s age
+)

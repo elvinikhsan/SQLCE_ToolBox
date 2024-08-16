@@ -1,0 +1,128 @@
+﻿Sales Amount :=
+SUMX (
+Sales,
+Sales[Quantity] * Sales[Net Price]
+)
+//leverages the implicit context transition of the
+measure Sales Amount
+Max Daily Sales :=
+MAXX (
+'Date',
+[Sales Amount]
+)
+
+Date of Max =
+VAR MaxDailySales = [Max Daily Sales]
+VAR DatesWithMax =
+FILTER (
+VALUES ( 'Date'[Date] ),
+[Sales Amount] = MaxDailySales
+)
+VAR Result =
+IF (
+COUNTROWS ( DatesWithMax ) = 1,
+DatesWithMax,
+BLANK ()
+)
+RETURN
+Result
+
+
+Selected Colors :=
+VAR Colors =
+VALUES ( 'Product'[Color] )
+VAR NumOfColors =
+COUNTROWS ( Colors )
+VAR NumOfAllColors =
+COUNTROWS (
+ALL ( 'Product'[Color] )
+)
+VAR AllColorsSelected = NumOfColors = NumOfAllColors
+VAR SelectedColors =
+CONCATENATEX (
+Colors,
+'Product'[Color],
+", ",
+'Product'[Color], ASC
+)
+VAR Result =
+IF (
+AllColorsSelected,
+"Showing all colors.",
+IF (
+NumOfColors > 5,
+"More than 5 colors selected, see slicer page for details.",
+"Showing " & SelectedColors & " colors."
+)
+)
+RETURN
+Result
+
+//calculated table
+Colors =
+ADDCOLUMNS (
+VALUES ( 'Product'[Color] ),
+"Products", CALCULATE ( COUNTROWS ( 'Product' ) ),
+"Sales Amount", [Sales Amount]
+)
+//calculated table
+Colors =
+SELECTCOLUMNS (
+VALUES ( 'Product'[Color] ),
+"Color", 'Product'[Color],
+"Products", CALCULATE ( COUNTROWS ( 'Product' ) ),
+"Sales Amount", [Sales Amount]
+)
+
+
+Date of Max :=
+VAR DailySales =
+ADDCOLUMNS (
+VALUES ( 'Date'[Date] ),
+"Daily Sales", [Sales Amount]
+)
+VAR MaxDailySales = MAXX ( DailySales, [Daily Sales] )
+VAR DatesWithMax =
+SELECTCOLUMNS (
+FILTER (
+DailySales,
+[Daily Sales] = MaxDailySales
+CHAPTER 7 Working with iterators and with CALCULATE 199
+),
+"Date", 'Date'[Date]
+)
+VAR Result =
+IF (
+COUNTROWS ( DatesWithMax ) = 1,
+DatesWithMax,
+BLANK ()
+)
+RETURN
+Result
+
+
+AvgSales30 :=
+VAR LastVisibleDate = MAX ( 'Date'[Date] )
+VAR NumberOfDays = 30
+VAR PeriodToUse =
+FILTER (
+ALL ( 'Date' ),
+'Date'[Date] > LastVisibleDate - NumberOfDays &&
+'Date'[Date] <= LastVisibleDate
+)
+VAR Result =
+CALCULATE (
+DIVIDE ( [Sales Amount], COUNTROWS ( 'Date' ) ),
+PeriodToUse
+)
+RETURN
+Result
+
+Rank Cat on Sales :=
+IF (
+HASONEVALUE ( 'Product'[Category] ),
+RANKX (
+ALL ( 'Product'[Category] ),
+[Sales Amount]
+)
+)

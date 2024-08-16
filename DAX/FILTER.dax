@@ -1,0 +1,22 @@
+﻿FabrikamHighMarginProducts =
+FILTER (
+FILTER (
+'Product',
+'Product'[Brand] = "Fabrikam"
+),
+'Product'[Unit Price] > 'Product'[Unit Cost] * 3
+)
+FabrikamHighMarginProducts =
+FILTER (
+'Product',
+AND (
+'Product'[Brand] = "Fabrikam",
+'Product'[Unit Price] > 'Product'[Unit Cost] * 3
+)
+)
+
+
+NumOfRedProducts :=
+COUNTROWS (
+FILTER ( 'Product', 'Product'[Color] = "Red" )
+)
