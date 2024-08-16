@@ -1,0 +1,98 @@
+﻿DEFINE 
+	MEASURE Sales[Sales Amount] = SUMX(Sales, Sales[Net Price] * Sales[Quantity])
+	MEASURE Sales[Gross Margin] = SUMX ( Sales, Sales[Quantity] * ( Sales[Net Price] - Sales[Unit Cost] ) )
+	MEASURE Sales[GM %] = DIVIDE ( [Gross Margin], [Sales Amount] )
+	
+	VAR Categories =
+    DATATABLE (
+        "Category", STRING,
+        {
+            { "Category" },
+            { "Audio" },
+            { "TV and Video" },
+            { "Computers" },
+            { "Cameras and camcorders" },
+            { "Cell phones" },
+            { "Music, Movies and Audio Books" },
+            { "Games and Toys" },
+            { "Home Appliances" }
+        }
+    ) 
+    
+    VAR Brand =
+    DATATABLE (
+    	"Brand", STRING,
+    	{
+    		{"Contoso"}
+    	}
+   	)
+   	
+   	VAR ProductBrand = TREATAS (Brand,'Product'[Brand])
+    
+    /* // Using FILTER
+    MEASURE Sales[Contoso GM] =
+		VAR ContosoSales = -- Saves the rows of Sales which are related
+				FILTER ( -- to Contoso-branded products into a variable
+						Sales,
+						RELATED ( 'Product'[Brand] ) = "Contoso"
+				)
+		VAR ContosoMargin = -- Iterates over ContosoSales
+				SUMX ( -- to only compute the margin for Contoso
+						ContosoSales,
+						Sales[Quantity] * ( Sales[Net Price] - Sales[Unit Cost] )
+						)
+		RETURN
+			ContosoMargin
+	
+	MEASURE Sales[Contoso Sales] = 
+		VAR ContosoSales = -- Saves the rows of Sales which are related
+				FILTER ( -- to Contoso-branded products into a variable
+					Sales,
+					RELATED ( 'Product'[Brand] ) = "Contoso"
+					)
+		VAR ContosoSalesAmount = -- Iterates over ContosoSales
+				SUMX ( -- to only compute the sales amount for Contoso
+					ContosoSales,
+					Sales[Quantity] * Sales[Net Price]
+					)
+		RETURN
+			ContosoSalesAmount
+	
+	MEASURE Sales[Contoso Ratio] = DIVIDE ( Sales[Contoso GM], Sales[Contoso Sales] )
+	
+    VAR Matrix = ADDCOLUMNS (
+				    TREATAS (
+				        Categories,
+				        'Product'[Category]
+					    ),
+					    "Sales Amount", ROUNDUP([Sales Amount],2),
+					    "Gross Margin", ROUNDUP([Gross Margin],2),
+					    "GM %", ROUNDUP([GM %] * 100, 2),
+					    "Contoso GM", ROUNDUP([Contoso GM],2),
+					    "Contoso GM %", ROUNDUP([Contoso Ratio] * 100,2)
+					    )
+	*/
+	
+	//Better solution using CALCULATE
+	//MEASURE Sales[Calc Contoso Sales] = CALCULATE(Sales[Sales Amount], ProductBrand) -- example using table expression as filter argument
+	MEASURE Sales[Calc Contoso Sales] = CALCULATE(Sales[Sales Amount], Product[Brand] = "Contoso")
+	MEASURE Sales[Calc Contoso GM] = CALCULATE(Sales[Gross Margin], Product[Brand] = "Contoso")
+	MEASURE Sales[Calc Contoso GM %] = CALCULATE(Sales[GM %], Product[Brand] = "Contoso")
+	
+    VAR CalcMatrix = ADDCOLUMNS (
+			    TREATAS (
+			        Categories,
+			        'Product'[Category]
+				    ),
+				    "Sales Amount", ROUNDUP([Sales Amount],2),
+				    "Gross Margin", ROUNDUP([Gross Margin],2),
+				    "GM %", ROUNDUP([GM %] * 100, 2),
+				    "Contoso Sales", ROUNDUP([Calc Contoso Sales],2),
+				    "Contoso GM", ROUNDUP([Calc Contoso GM],2),
+				    "Contoso GM %", ROUNDUP([Calc Contoso GM %] * 100,2)
+				    )
+				
+
+EVALUATE 
+	//Matrix ORDER BY [Category] ASC
+	CalcMatrix ORDER BY [Category] ASC

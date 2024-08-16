@@ -1,0 +1,26 @@
+﻿EVALUATE
+SUMMARIZECOLUMNS(Customer[Name],Customer[Company Name],"SumOfSales",Sales[Sales Amount])
+
+EVALUATE
+SUMMARIZECOLUMNS (
+ Customer[Name],
+ FILTER (
+ Customer,
+ Customer[Continent] = "Europe"
+ ),
+ "SumOfSales", Sales[Sales Amount])
+
+--  SUMMARIZECOLUMNS is the primary querying function in DAX
+--  It provides most querying features in a single function:
+--      First set of arguments are the groupby columns
+--      Second set are the filters
+--      Third set are additional columns added to the resultset
+EVALUATE
+SUMMARIZECOLUMNS (
+    'Product'[Brand],
+    'Date'[Year],
+    TREATAS ( { 2008, 2009 }, 'Date'[Year] ),
+    TREATAS ( { "Red", "Blue" }, 'Product'[Color] ),
+    "Amount", [Sales Amount],
+    "Qty", SUM ( Sales[Quantity] )
+)

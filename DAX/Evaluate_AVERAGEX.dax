@@ -1,0 +1,4 @@
+﻿DEFINE 
+MEASURE Sales[AvgDeliveryDays] = AVERAGEX (Sales, INT ( Sales[Delivery Date] - Sales[Order Date] ))
+
+EVALUATE {Sales[AvgDeliveryDays]}
