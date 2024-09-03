@@ -1,0 +1,151 @@
+Change history
+12/22/2017 Release of SQLRES version 4.0.0.0
+* Added: Support for other cluster types (WSFC, EXTERNAL, NONE)
+* Added: Support for Read-Scale or cluster-less Availability Groups
+* Updated: Prevent test cases to run on In-Memory,  StretchDB and Temporal tables
+* Added: Test cases with student task "Execute Query" show the exact query and copy the query to clipboard
+* Added: Test case "Delete TDE certificate"
+
+03/06/2017 Release of SQLRES version 3.0.1.1
+* Fixed: Database Level Testcases stopped working on Database Mirroring
+* Fixed: Scoping CleanUp
+12/16/2016 Release of SQLRES version 3.0.1.0
+* Added: New Scoping Wizard
+	New wizard simplifies scoping
+* Added: SQL Server SQL authentication
+	Connecting to SQL Server with SQL username and password
+* Added: Storing of Windows Credentials for cross-domain deployments
+	Storing Windows Credentials for cross-domain deployments and environments where PSRemoting is ot available
+* Added: Support for SQL Server 2016 and Windows Server 2016
+* Added: Debug Logging for Troubleshooting
+* Added: New test case Wrong TLS Certificate Thumbprint
+	Troubleshooting TLS encryption settings
+* Added: New repair option for some test cases from the admin menu
+* Added: New menu navigation
+	Launch-TestCaseMenu will keep executing test cases in a loop
+* Added: New test case Eat Memory
+	Simulates a bad behaving application that consumes too much memory
+* Added: New test case SQLAgent NoRights on RegHive
+	New test case removes permissions from SQLServerAgent registry hive
+	Very difficult test case - no evidence in any event log - must use ProcMon to find out
+* Updated: Changed test case MAX MEMORY too low
+	New approach consumes memory at startup - making sure that the test case hits the issue
+* Updated: Changed test case Generate BSOD
+	New version can manipulate boot options - boot time will be set to 999 seconds
+
+08/12/2016 Test Release of SQLRES version 2.0.6.9
+* Updated: test case TempDB No Rights
+	Changed deny permissions for instances where tempdb is colocated to other system databases
+* Updated: test case ERRORLOG No Rights
+	Supports instances where SQL Server and SQL Server Agent use the same service account
+* Updated: test case SQLAGENT.OUT No Rights
+	Supports instances where SQL Server and SQL Server Agent use the same service account
+* Updated: test case MAX Server Memory too low
+	Toolset will connect to instance and consume memory
+	Test case duration configurable
+* Updated: Toolset will hide test cases that are not relevant for the scoped environment
+	Toolset will hide test cases for named instances if default instance was scoped
+	Toolset will hide test cases for default instances if named instance was scoped
+	Toolset will hide test cases for clustered instances if scoped instance is standalone
+
+08/03/2016 Test Release of SQLRES version 2.0.6.8
+* Updated: test case Hide Instance
+	disabled Shared Memory if instance is not clustered
+* Fixed: Updated test case lockout from sysadmin
+	Needed to disable accounts / remove role membership in the correct order - calling users needs to be dropped at last
+* Fixed: Updated test case Deadlocked schedulers
+	test case sometimes returns already before the configured runtime ends
+* Added: Added test case Delete SYSTEM login
+	test case connects to the selected instance and removes the login NT AUTHORITY\SYSTEM (only available for cluster and AG test cases)
+
+06/13/2016 Test Release of SQLRES version 2.0.6.7
+* Added: SQL 2016 compatibility
+* Updated: several test cases to run on local cluster node
+
+04/24/2016 Test Release of SQLRES version 2.0.6.6
+* Added: Added test case SQL Agent no rights on RegHive
+* Added: Added test case Move SQL Server to Available Storage
+
+04/17/2016 Test Release of SQLRES version 2.0.6.5
+* Added: Added ability to enter test case duration (default: 15 minutes)
+* Added: Added test case to disable all network protocols
+* Added: Added test case to configure wrong TLS certificate thumbprint
+* Fixed: Fixed new test cases no rights on ERRORLOG / SQLAGENT.OUT
+	 Filesystem right name was incorrect
+* Added: Added file backup of system databases (master, model, msdb)
+	 Toolset will show a warning if backup is older than 7 days
+* Added: Toolset will not try to create a tail log backup for model database (removed with SQL 2012 SP2, SQL 2014 SP1)
+	 New version will create a backup of database model
+	 and restore this backup with NORECOVERY
+	 Test case was renamed to Execute-ModelDatabaseInRestoringState
+* Added: The new tool set will not scope databases with page_verify_option set to NONE
+	 Toolset will show a warning message and cancel scoping
+	 Toolset will only show a warning message if databases uses TORN_PAGE_DETECTION
+
+04/03/2016 Test Release of SQLRES version 2.0.6.3
+* Added: Added test case TempDB misconfiguration
+* Added: Added test case No Rights on ERRORLOG
+* Added: Added test case No Roghts on SQLAGENT.OUT
+* Added: Added test case Disable public NIC (Experimental)
+* Fixed: Fixed test case Block Cluster Communication
+         Test case can now be canceled
+         Cluster Service will now be killed (not stopped)
+* Added: New menu behavior (looping)
+         Toolset will return to main screen after every test case
+
+12/13/2015 Release of SQLRES version 2.0.6
+* Added: Added test cases for AlwaysOn Availability Groups
+* Added: Added workaround for customers with "hardened" SQL Server (Browser disbaled)
+* Added: Added EULA
+* Added: Added Azure detection
+* Added: Added test case Block Cluster Communication
+* Added: Added test case Remove CNO access rights from file share witness
+* Added: Added test case to offline data disk for Availability Group database
+* Added: Added test case to offline TLog disk for Availability Group database
+* Fixed: Fixed test cases with renamed HADR Endpoint
+
+08/30/2014 Release of SQLRES version 1.7
+* Added: Added Support for SQL Server 2014
+* Added: Added check for test case tail log backup of model database (removed with SQL 2012 SP2, SQL 2014 SP1)
+* Added: Added test case Change Default Instance TCP Port
+* Added: Added test case Disable SQL Browser Service
+* Added: Added test case Max Server Memory too low
+* Fixed: Fixed error handling in test cases
+
+01/17/2014 Release of SQLRES version 1.5
+* Added: Added support for mirrored databases
+* Added: Added test case for Taillog backup of MSDB
+* Added: Added Function ReScope-Environment to enable fast way to re-scope an outdated environment
+* Added: Added support for databases on secondary replicas (info message will be shown)
+* Fixed: Correction for Availability Groups hosted on a clustered SQL Server
+
+12/18/2013 Release of SQLRES version 1.3
+* Added: Test cases for Availability Groups
+* Added: Added support for databases in Availability Groups
+* Added: Added test case for fulltext index corruption
+
+11/18/2013 Release of SQLRES version 1.2
+* Added: Test case level selection
+* Added: Added additional Cluster test cases
+* Fixed: Added compatibility with Windows 8/8.1 and Windows Server 2012/2012 R2
+* Added: Added test case for MSDTC "corruption"
+* Added: Added test case Delete Cluster Name Object
+* Fixed: Fixed test case cliconfg wrong alias (missing parent registry key)
+* Fixed: Database names with special characters
+* Added: Changed Test case level selection to use letters instead of numbers
+* Fixed: Filter backups to show only backup of current database when trying to restore
+* Fixed: Only try to create data purity corruption on [not null] values
+* Fixed: Removed hard-coded reference to file-id 1 in several test cases
+* Fixed: Changed function call FLOOR to CEILING - Problem with small indexes in test case Index Page corruption
+
+09/20/2013 Release of SQLRES version 1.1
+* Added: Cluster test cases
+* Fixed: Try only to remove dependent disk in test case Remove Disk Dependencies
+* Added: Added application name in connection string for test case Deadlocked Schedulers
+* Added: Added additional messages about progress in test case Cluster Quorum loss
+* Fixed: Correction for identifying the name of the quorum disk resource
+* Added: Added test case for erroneous Logon Trigger
+* Added: Added test case for data purity corruption
+
+08/31/2013 Release of SQLRES version 1.0
+
