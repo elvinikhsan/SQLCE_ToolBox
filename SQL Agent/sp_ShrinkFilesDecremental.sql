@@ -1,3 +1,5 @@
+USE master;
+GO
 CREATE OR ALTER PROCEDURE dbo.sp_ShrinkFilesDecremental
 (@DatabaseName SYSNAME
 ,@FileType VARCHAR(4) = 'DATA'
