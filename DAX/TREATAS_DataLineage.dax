@@ -7,7 +7,6 @@
     DATATABLE (
         "Category", STRING,
         {
-            { "Category" },
             { "Audio" },
             { "TV and Video" },
             { "Computers" },
