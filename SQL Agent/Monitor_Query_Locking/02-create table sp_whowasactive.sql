@@ -21,6 +21,7 @@ CREATE TABLE dbo.sp_whowasactive
 ,[host_name] nvarchar(128) NULL
 ,[database_name] nvarchar(128) NULL
 ,[program_name] nvarchar(128) NULL
+,[additional_info] XML NULL
 ,[start_time] datetime NOT NULL
 ,[login_time] datetime NULL
 ,[request_id] int NULL
