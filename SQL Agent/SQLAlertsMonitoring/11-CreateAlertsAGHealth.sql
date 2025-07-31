@@ -51,7 +51,7 @@ BEGIN
 			  , @message_id = @curErrorNumber
 			  , @severity = 0
 			  , @enabled = 1 
-			  , @delay_between_responses = 0 
+			  , @delay_between_responses = 300 
 			  , @include_event_description_in = 1 
 			  , @notification_message= @curErrorMessage
 			  , @job_id = N'00000000-0000-0000-0000-000000000000';
