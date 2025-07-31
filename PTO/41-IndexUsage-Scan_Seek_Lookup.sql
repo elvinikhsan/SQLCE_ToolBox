@@ -7,11 +7,11 @@ DECLARE @temp AS TABLE
 		,TableName VARCHAR(MAX) NULL
 		,IndexName VARCHAR(MAX) NULL
 		,TypeDesc VARCHAR(25)
-		,IndexSizeKB INT NULL
-		,NumOfSeeks INT NULL
-		,NumOfScan INT NULL
-		,NumOfLookups INT NULL
-		,NumOfUpdates INT NULL);
+		,IndexSizeKB BIGINT NULL
+		,NumOfSeeks BIGINT NULL
+		,NumOfScan BIGINT NULL
+		,NumOfLookups BIGINT NULL
+		,NumOfUpdates BIGINT NULL);
 
 DECLARE @count INT = 0;
 DECLARE @j INT =1;
