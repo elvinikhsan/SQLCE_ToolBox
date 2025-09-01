@@ -10,7 +10,7 @@ EXEC msdb.dbo.sp_add_operator @name=N'DB.Admin',
 		@sunday_pager_start_time=90000, 
 		@sunday_pager_end_time=180000, 
 		@pager_days=0, 
-		@email_address=N'db.admin@bankmandiri.co.id', 
+		@email_address=N'db.admin@email.com', 
 		@category_name=N'[Uncategorized]'
 GO
 -- Update SQL Agent Settings Alert System 
@@ -21,4 +21,7 @@ EXEC msdb.dbo.sp_set_sqlagent_properties @email_save_in_sent_folder=1,
 		@use_databasemail=1
 GO
 EXEC master.dbo.sp_MSsetalertinfo @failsafeoperator=N'DB.Admin', @notificationmethod=1
+GO
+EXEC msdb.dbo.sp_set_sqlagent_properties @email_save_in_sent_folder=1, 
+		@alert_replace_runtime_tokens=1
 GO
