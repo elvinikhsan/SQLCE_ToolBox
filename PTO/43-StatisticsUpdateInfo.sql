@@ -11,8 +11,8 @@ DECLARE @temp AS TABLE
 		,AutoCreated BIT NULL
 		,[NoRecompute] BIT NULL
 		,UserCreated BIT NULL
-		,[RowCount] INT NULL
-		,[PageCount] INT NULL);
+		,[RowCount] BIGINT NULL
+		,[PageCount] BIGINT NULL);
 
 DECLARE @count INT = 0;
 DECLARE @j INT =1;
