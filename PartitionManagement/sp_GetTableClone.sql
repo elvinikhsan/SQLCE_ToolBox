@@ -2,6 +2,7 @@ USE master;
 GO
 CREATE OR ALTER PROCEDURE [dbo].[sp_GetTableClone] 
 (@tableName VARCHAR(255)
+,@fileGroupName SYSNAME = 'PRIMARY'
 ,@cloneTableName VARCHAR(255) = NULL
 ,@includePartition BIT = 0
 ,@output VARCHAR(MAX) OUT
@@ -410,7 +411,7 @@ BEGIN
                   END 
 				  + CASE WHEN @includePartition = 1 AND [PartitionStatus] = 'Partitioned' COLLATE SQL_Latin1_General_CP1_CI_AS
 				  THEN ' ON ' + QUOTENAME([PartitionSchemeName]) + '(' + REPLACE(REPLACE([index_columns_key],'ASC',''),'DESC','') + ')' 
-				  ELSE ''
+				  ELSE ' ON ' + QUOTENAME(@fileGroupName) + ' '
 				  END
                       
              ELSE ''
@@ -475,7 +476,7 @@ BEGIN
                   END 
 				  + CASE WHEN @includePartition = 1 AND [PartitionStatus] = 'Partitioned' COLLATE SQL_Latin1_General_CP1_CI_AS
 				  THEN ' ON ' + QUOTENAME([PartitionSchemeName]) + '(' + REPLACE(REPLACE([index_columns_key],'ASC',''),'DESC','') + ');' 
-				  ELSE ';'
+				  ELSE ' ON ' + QUOTENAME(@fileGroupName) + ';'
 				  END
 				+ @vbCrLf --+ 'GO' + @vbCrLf
            END
