@@ -64,6 +64,32 @@ BEGIN
 	END
 
 --##############################################################################
+-- Check If Index's column name is Valid 
+-- Must not contain 'ASC' or 'DESC'
+--##############################################################################
+	IF EXISTS (SELECT 1
+	FROM
+		sys.tables AS t
+	INNER JOIN 
+		sys.schemas sch ON t.[schema_id]= sch.[schema_id]
+	INNER JOIN
+		sys.indexes AS ind ON t.object_id = ind.object_id
+	INNER JOIN
+		sys.index_columns AS ic ON ind.object_id = ic.object_id AND ind.index_id = ic.index_id
+	INNER JOIN
+		sys.columns AS col ON ic.object_id = col.object_id AND ic.column_id = col.column_id
+	WHERE
+		t.is_ms_shipped = 0 -- Exclude system tables
+		AND sch.name = @SCHEMANAME
+		AND t.name = @TBLNAME
+		AND ind.name IS NOT NULL -- Exclude heap (no index name)
+		AND ((CHARINDEX(col.name,'ASC',0) = 1) OR (CHARINDEX(col.name,'DESC',0) = 1)))
+	BEGIN
+		PRINT 'Invalid column name found in one of the indexes! Column name cannot contain "ASC" or "DESC" characters!'
+		RETURN -1;
+	END
+
+--##############################################################################
 -- Valid Table, Continue Processing
 --##############################################################################
  SELECT 
@@ -238,104 +264,88 @@ BEGIN
 --##############################################################################
 --PK/Unique Constraints and Indexes, using the 2005/08 INCLUDE syntax
 --##############################################################################
-  DECLARE @Results  TABLE (
-                    [SCHEMA_ID]             INT,
-                    [SCHEMA_NAME]           VARCHAR(255),
-                    [OBJECT_ID]             INT,
-                    [OBJECT_NAME]           VARCHAR(255),
-                    [index_id]              INT,
-                    [index_name]            VARCHAR(255),
-                    [ROWS]                  BIGINT,
-                    [SizeMB]                DECIMAL(19,3),
-                    [IndexDepth]            INT,
-                    [TYPE]                  INT,
-                    [type_desc]             VARCHAR(30),
-                    [fill_factor]           INT,
-                    [is_unique]             INT,
-                    [is_primary_key]        INT ,
-                    [is_unique_constraint]  INT,
-                    [index_columns_key]     VARCHAR(MAX),
-                    [index_columns_include] VARCHAR(MAX),
-                    [has_filter] bit ,
-                    [filter_definition] VARCHAR(MAX),
-                    [currentFilegroupName]  varchar(128),
-                    [CurrentCompression]    varchar(128));
-  INSERT INTO @Results
-    SELECT
-      [SCH].[schema_id], [SCH].[name] AS [SCHEMA_NAME],
-      [OBJS].[object_id], [OBJS].[name] AS [OBJECT_NAME],
-      [IDX].[index_id], ISNULL([IDX].[name], '---') AS [index_name],
-      [partitions].[ROWS], [partitions].[SizeMB], INDEXPROPERTY([OBJS].[object_id], [IDX].[name], 'IndexDepth') AS [IndexDepth],
-      [IDX].[type], [IDX].[type_desc], [IDX].[fill_factor],
-      [IDX].[is_unique], [IDX].[is_primary_key], [IDX].[is_unique_constraint],
-      ISNULL([Index_Columns].[index_columns_key], '---') AS [index_columns_key],
-      ISNULL([Index_Columns].[index_columns_include], '---') AS [index_columns_include],
-      [IDX].[has_filter],
-      [IDX].[filter_definition],
-      [filz].[name],
-      ISNULL([p].[data_compression_desc],'')
-    FROM [sys].[objects] [OBJS]
-      INNER JOIN [sys].[schemas] [SCH] ON [OBJS].[schema_id]=[SCH].[schema_id]
-      INNER JOIN [sys].[indexes] [IDX] ON [OBJS].[object_id]=[IDX].[object_id]
-      INNER JOIN [sys].[filegroups] [filz] ON [IDX].[data_space_id] = [filz].[data_space_id]
-      INNER JOIN [sys].[partitions] [p]     ON  [IDX].[object_id] =  [p].[object_id]  AND [IDX].[index_id] = [p].[index_id]
-      INNER JOIN (
-                  SELECT
-                    [STATS].[object_id], [STATS].[index_id], SUM([STATS].[row_count]) AS [ROWS],
-                    CONVERT(NUMERIC(19,3), CONVERT(NUMERIC(19,3), SUM([STATS].[in_row_reserved_page_count]+[STATS].[lob_reserved_page_count]+[STATS].[row_overflow_reserved_page_count]))/CONVERT(NUMERIC(19,3), 128)) AS [SizeMB]
-                  FROM [sys].[dm_db_partition_stats] [STATS]
-                  GROUP BY [STATS].[object_id], [STATS].[index_id]
-                 ) AS [partitions] 
-        ON  [IDX].[object_id]=[partitions].[OBJECT_ID] 
-        AND [IDX].[index_id]=[partitions].[index_id]
-
-    CROSS APPLY (
-                 SELECT
-                   LEFT([Index_Columns].[index_columns_key], LEN([Index_Columns].[index_columns_key])-1) AS [index_columns_key],
-                  LEFT([Index_Columns].[index_columns_include], LEN([Index_Columns].[index_columns_include])-1) AS [index_columns_include]
-                 FROM
-                      (
-                       SELECT
-                              (
-                              SELECT QUOTENAME([COLS].[name]) + CASE WHEN [IXCOLS].[is_descending_key] = 0 THEN ' ASC' ELSE ' DESC' END + ',' + ' '
-                               FROM [sys].[index_columns] [IXCOLS]
-                                 INNER JOIN [sys].[columns] [COLS]
-                                   ON  [IXCOLS].[column_id]   = [COLS].[column_id]
-                                   AND [IXCOLS].[object_id] = [COLS].[object_id]
-                               WHERE [IXCOLS].[is_included_column] = 0
-                                 AND [IDX].[object_id] = [IXCOLS].[object_id] 
-                                 AND [IDX].[index_id] = [IXCOLS].[index_id]
-                               ORDER BY [IXCOLS].[key_ordinal]
-                               FOR XML PATH('')
-                              ) AS [index_columns_key],
-                             (
-                             SELECT QUOTENAME([COLS].[name]) + ',' + ' '
-                              FROM [sys].[index_columns] [IXCOLS]
-                                INNER JOIN [sys].[columns] [COLS]
-                                  ON  [IXCOLS].[column_id]   = [COLS].[column_id]
-                                  AND [IXCOLS].[object_id] = [COLS].[object_id]
-                              WHERE [IXCOLS].[is_included_column] = 1
-                                AND [IDX].[object_id] = [IXCOLS].[object_id] 
-                                AND [IDX].[index_id] = [IXCOLS].[index_id]
-                              ORDER BY [IXCOLS].[index_column_id]
-                              FOR XML PATH('')
-                             ) AS [index_columns_include]
-                      ) AS [Index_Columns]
-                ) AS [Index_Columns]
-    WHERE [SCH].[name]  LIKE CASE 
-                                     WHEN @SCHEMANAME = ''   COLLATE SQL_Latin1_General_CP1_CI_AS
-                                     THEN [SCH].[name] 
-                                     ELSE @SCHEMANAME 
-                                   END
-    AND [OBJS].[name] LIKE CASE 
-                                  WHEN @TBLNAME = ''   COLLATE SQL_Latin1_General_CP1_CI_AS 
-                                  THEN [OBJS].[name] 
-                                  ELSE @TBLNAME 
-                                END
-    ORDER BY 
-      [SCH].[name], 
-      [OBJS].[name], 
-      [IDX].[name];
+	DECLARE @Results  TABLE (
+						[SCHEMA_ID]             INT,
+						[SCHEMA_NAME]           VARCHAR(255),
+						[OBJECT_ID]             INT,
+						[OBJECT_NAME]           VARCHAR(255),
+						[index_id]              INT,
+						[index_name]            VARCHAR(255),
+						[TYPE]                  INT,
+						[type_desc]             VARCHAR(30),
+						[fill_factor]           INT,
+						[is_unique]             INT,
+						[is_primary_key]        INT ,
+						[is_unique_constraint]  INT,
+						[index_columns_key]     VARCHAR(MAX),
+						[index_columns_include] VARCHAR(MAX),
+						[has_filter] bit ,
+						[filter_definition] VARCHAR(MAX),
+						[currentFilegroupName]  varchar(128),
+						[CurrentCompression]    varchar(128),
+						[PartitionStatus] VARCHAR(128),
+						[PartitionSchemeName] VARCHAR(255),
+						[PartitionFunctionName] VARCHAR(255));
+	WITH CTE AS (
+	SELECT SCH.schema_id, SCH.name AS [Schema_Name], t.object_id, t.name AS [OBJECT_NAME],
+	i.index_id, ISNULL(i.name,'---') AS index_name, i.type, i.type_desc, i.fill_factor, i.is_unique, i.is_primary_key, i.is_unique_constraint,
+		ISNULL(STUFF((
+			SELECT ', ' + COL_NAME(ic.object_id, ic.column_id) +
+				   CASE WHEN ic.is_descending_key = 1 THEN ' DESC' ELSE ' ASC' END
+			FROM sys.index_columns ic
+			WHERE ic.object_id = i.object_id AND ic.index_id = i.index_id AND ic.is_included_column = 0
+			ORDER BY ic.key_ordinal
+			FOR XML PATH('')
+		), 1, 2, ''),'---') AS [index_columns_key],
+		ISNULL(STUFF((
+			SELECT ', ' + COL_NAME(ic.object_id, ic.column_id)
+			FROM sys.index_columns ic
+			WHERE ic.object_id = i.object_id AND ic.index_id = i.index_id AND ic.is_included_column = 1
+			ORDER BY ic.column_id
+			FOR XML PATH('')
+		), 1, 2, ''),'---') AS [index_columns_include],
+		i.has_filter, i.filter_definition, fg.name as FilegroupName,
+		ISNULL([p].[data_compression_desc],'') AS compression_desc,
+		-- Partitioning Information
+		CASE
+			WHEN ps.name IS NOT NULL THEN 'Partitioned'
+			ELSE 'Not Partitioned'
+		END AS PartitionStatus,
+		ps.name AS PartitionSchemeName,
+		pf.name AS PartitionFunctionName
+	FROM
+		sys.tables t
+	INNER JOIN [sys].[schemas] [SCH] ON t.[schema_id]=[SCH].[schema_id]
+	LEFT JOIN
+		sys.indexes i ON t.object_id = i.object_id
+	LEFT JOIN
+		sys.partition_schemes ps ON i.data_space_id = ps.data_space_id
+	LEFT JOIN
+		sys.partition_functions pf ON ps.function_id = pf.function_id
+	LEFT JOIN
+		sys.partitions p ON t.object_id = p.object_id AND i.index_id = p.index_id
+	LEFT JOIN 
+		sys.filegroups fg ON i.[data_space_id] = fg.[data_space_id]
+	WHERE
+		t.is_ms_shipped = 0 -- Exclude system tables
+		AND [SCH].[name]  LIKE CASE 
+										 WHEN @SCHEMANAME = ''   COLLATE SQL_Latin1_General_CP1_CI_AS
+										 THEN [SCH].[name] 
+										 ELSE @SCHEMANAME 
+									   END
+		AND [t].[name] LIKE CASE 
+									  WHEN @TBLNAME = ''   COLLATE SQL_Latin1_General_CP1_CI_AS 
+									  THEN [t].[name] 
+									  ELSE @TBLNAME 
+									END)
+	INSERT INTO @Results
+	SELECT DISTINCT schema_id, [Schema_Name], object_id, [OBJECT_NAME], index_id, index_name,
+	type, type_desc, fill_factor, is_unique, is_primary_key, is_unique_constraint,
+	[index_columns_key], [index_columns_include], has_filter, filter_definition, FilegroupName,
+	compression_desc, PartitionStatus, PartitionSchemeName, PartitionFunctionName
+	FROM CTE
+	ORDER BY
+		[Schema_Name], [OBJECT_NAME], index_id;
 
   SET @CONSTRAINTSQLS = '';
   SET @INDEXSQLS      = '';
@@ -349,7 +359,7 @@ BEGIN
          + CASE
              WHEN [is_primary_key] = 1 OR [is_unique] = 1
              THEN @vbCrLf
-                  + 'CONSTRAINT   '  COLLATE SQL_Latin1_General_CP1_CI_AS 
+                  + 'CONSTRAINT '  COLLATE SQL_Latin1_General_CP1_CI_AS 
 				  + CASE 
 						WHEN [is_primary_key] = 1
 						THEN QUOTENAME(REPLACE([index_name],@TBLNAME,@cloneTableName)) + ' '
@@ -360,7 +370,7 @@ BEGIN
                       THEN ' PRIMARY KEY ' 
                       ELSE CASE  
                              WHEN [is_unique] = 1     
-                             THEN ' UNIQUE      '      
+                             THEN ' UNIQUE '      
                              ELSE '' 
                            END 
                     END
@@ -368,7 +378,7 @@ BEGIN
                   + CASE 
                       WHEN [type_desc]='NONCLUSTERED' 
                       THEN '' 
-                      ELSE '   ' 
+                      ELSE ' ' 
                     END
                   + ' (' + [index_columns_key] + ')'
                   + CASE 
@@ -397,10 +407,14 @@ BEGIN
 
                   ELSE '' 
                   END 
+				  + CASE WHEN [PartitionStatus] = 'Partitioned' COLLATE SQL_Latin1_General_CP1_CI_AS
+				  THEN ' ON ' + QUOTENAME([PartitionSchemeName]) + '(' + REPLACE(REPLACE([index_columns_key],'ASC',''),'DESC','') + ')' 
+				  ELSE ''
+				  END
                       
              ELSE ''
            END + ','
-  FROM @RESULTS
+  FROM @Results
   WHERE [type_desc] != 'HEAP'
     AND [is_primary_key] = 1 
     OR  [is_unique] = 1
@@ -454,10 +468,14 @@ BEGIN
                                     WHEN [fill_factor]  = 0  AND [CurrentCompression] <> 'NONE' THEN 'DATA_COMPRESSION = ' + [CurrentCompression]+' '
                                     ELSE '' 
                                   END
-                                  + ');'
+                                  + ') '
 
-                  ELSE ';' 
+                  ELSE ' ' 
                   END 
+				  + CASE WHEN [PartitionStatus] = 'Partitioned' COLLATE SQL_Latin1_General_CP1_CI_AS
+				  THEN ' ON ' + QUOTENAME([PartitionSchemeName]) + '(' + REPLACE(REPLACE([index_columns_key],'ASC',''),'DESC','') + ');' 
+				  ELSE ';'
+				  END
 				+ @vbCrLf --+ 'GO' + @vbCrLf
            END
   FROM @RESULTS
