@@ -43,7 +43,7 @@ SET @tableHTML =
 
 EXEC msdb.dbo.sp_send_dbmail
 				@profile_name = 'SQLAlertMail', --- database mail profile name
-				@recipients = 'db.admin@bankmandiri.co.id',
+				@recipients = 'db.admin@xxx.com',
 				@Subject = 'LM_DATA: Database Growth Report',
 				@body = @tableHTML,
 				@body_format = 'HTML';
