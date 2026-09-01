@@ -60,7 +60,11 @@ $results = foreach ($folder in $folders) {
     $errorMessage = $null
 
     try {
-        $check = Test-DbaPath -SqlInstance $TargetSqlInstance -Path $folder -EnableException
+        # -Path must be passed as an array (@($folder), not $folder). With a single scalar path
+        # and a single instance, Test-DbaPath collapses to a plain boolean with no .IsContainer
+        # property - accessing it then silently returns $null instead of erroring, so every
+        # already-existing folder was falling through to the "create" branch below.
+        $check = Test-DbaPath -SqlInstance $TargetSqlInstance -Path @($folder) -EnableException
         if ($check -and $check.IsContainer) {
             $status = 'AlreadyExists'
             Write-MigrationLog "  [Exists]  $folder"
@@ -72,7 +76,7 @@ $results = foreach ($folder in $folders) {
 
                 # Re-check rather than trust a silent success, since xp_create_subdir doesn't
                 # reliably raise a T-SQL error for every failure mode (e.g. some permission cases).
-                $recheck = Test-DbaPath -SqlInstance $TargetSqlInstance -Path $folder -EnableException
+                $recheck = Test-DbaPath -SqlInstance $TargetSqlInstance -Path @($folder) -EnableException
                 if ($recheck -and $recheck.IsContainer) {
                     $status = 'Created'
                     Write-MigrationLog "  [Created] $folder"
