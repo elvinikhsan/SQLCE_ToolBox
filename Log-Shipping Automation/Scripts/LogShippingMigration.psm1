@@ -264,7 +264,17 @@ function Invoke-DatabaseBackupPhase {
 }
 
 function Invoke-DatabaseCopyPhase {
-    <# robocopy the backup file(s) from the source share to the target share, polling size for percent complete. #>
+    <#
+    robocopy the backup file(s) from the source share to the target share, polling size for percent
+    complete. robocopy's own exit code (<8 = success) only means it submitted every copy operation
+    without a hard failure - it is not proof every destination file is fully written and visible yet
+    (SMB write-behind caching, AV scan-on-write holding the handle, DFS replication lag, etc. can all
+    leave a short gap between the process exiting and a file actually reaching its final size on a
+    network share). So after the process exits, this explicitly re-verifies every destination file's
+    size against its recorded source size, retrying for up to -VerifyTimeoutSeconds, before declaring
+    CopyStatus Complete - trusting the exit code alone is what was reporting Complete before the files
+    had actually landed.
+    #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$SourceBackupShare,
@@ -273,17 +283,22 @@ function Invoke-DatabaseCopyPhase {
         [Parameter(Mandatory)][string]$TrackingInstance,
         [Parameter(Mandatory)][string]$TrackingDatabase,
         [Parameter(Mandatory)][int]$TrackingId,
-        [int]$PollSeconds = 15
+        [int]$PollSeconds = 15,
+        [int]$VerifyTimeoutSeconds = 120
     )
 
     Set-TrackingField -TrackingInstance $TrackingInstance -TrackingDatabase $TrackingDatabase -TrackingId $TrackingId `
         -Fields @{ CopyStatus = 'InProgress'; CopyStartTime = (Get-Date) }
 
     try {
+        $sourceSizes = @{}
         $totalBytes = 0L
         foreach ($f in $FileName) {
             $src = Join-Path $SourceBackupShare $f
-            if (Test-Path -LiteralPath $src) { $totalBytes += (Get-Item -LiteralPath $src).Length }
+            if (-not (Test-Path -LiteralPath $src)) { throw "Source backup file not found: $src" }
+            $len = (Get-Item -LiteralPath $src).Length
+            $sourceSizes[$f] = $len
+            $totalBytes += $len
         }
         Set-TrackingField -TrackingInstance $TrackingInstance -TrackingDatabase $TrackingDatabase -TrackingId $TrackingId -Fields @{ BytesTotal = $totalBytes }
 
@@ -293,6 +308,7 @@ function Invoke-DatabaseCopyPhase {
 
         while (-not $proc.HasExited) {
             Start-Sleep -Seconds $PollSeconds
+            $proc.Refresh()
             $copiedBytes = 0L
             foreach ($f in $FileName) {
                 $dst = Join-Path $TargetBackupShare $f
@@ -306,8 +322,27 @@ function Invoke-DatabaseCopyPhase {
         # robocopy exit codes 0-7 are success variants; 8+ indicates failure.
         if ($proc.ExitCode -ge 8) { throw "robocopy failed with exit code $($proc.ExitCode). See $roboLog" }
 
+        # Verify every file actually reached its source size before trusting the exit code - see
+        # function comment above for why the exit code alone isn't sufficient proof on its own.
+        $deadline = (Get-Date).AddSeconds($VerifyTimeoutSeconds)
+        do {
+            $copiedBytes = 0L
+            $allMatch = $true
+            foreach ($f in $FileName) {
+                $dst = Join-Path $TargetBackupShare $f
+                $dstLen = if (Test-Path -LiteralPath $dst) { (Get-Item -LiteralPath $dst).Length } else { 0L }
+                $copiedBytes += $dstLen
+                if ($dstLen -ne $sourceSizes[$f]) { $allMatch = $false }
+            }
+            if (-not $allMatch) { Start-Sleep -Seconds 2 }
+        } while (-not $allMatch -and (Get-Date) -lt $deadline)
+
+        if (-not $allMatch) {
+            throw "robocopy exited (code $($proc.ExitCode)) but destination file size(s) still didn't match the source after waiting ${VerifyTimeoutSeconds}s - copy did not actually finish. See $roboLog"
+        }
+
         Set-TrackingField -TrackingInstance $TrackingInstance -TrackingDatabase $TrackingDatabase -TrackingId $TrackingId -Fields @{
-            CopyStatus = 'Complete'; CopyEndTime = (Get-Date); CopyPercentComplete = 100; BytesCopied = $totalBytes
+            CopyStatus = 'Complete'; CopyEndTime = (Get-Date); CopyPercentComplete = 100; BytesCopied = $copiedBytes
         }
     }
     catch {
