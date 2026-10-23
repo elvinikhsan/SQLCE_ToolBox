@@ -3,7 +3,7 @@
  Start-LogShippingMigration.ps1
 
  Orchestrates SharePoint content database migration via log shipping:
-   - Phase 'Initialize'          : seed backup (full copy-only + 1 log, compressed),
+   - Phase 'Initialize'          : seed backup (regular full, NOT copy-only, + 1 log, compressed),
                                     copy backup files to the target share, restore
                                     WITH NORECOVERY on the target (WITH MOVE per the
                                     folder mapping).
@@ -42,6 +42,13 @@
      -SourceSqlInstance SQL-SRC01 -TargetSqlInstance SQL-TGT01 -TrackingSqlInstance SQL-TGT01 `
      -SourceBackupShare '\\SQL-SRC01\LSBackups' -TargetBackupShare '\\SQL-TGT01\LSBackups' -WaveFile .\Wave1_Databases.txt `
      -BackupIntervalMinutes 15 -CopyIntervalMinutes 15 -RestoreIntervalMinutes 15 -MonitorServer SQL-MON01
+
+ # Same, but stagger the Agent job start times 5 minutes apart per database (wave-file order):
+ # DB1 00:00, DB2 00:05, DB3 00:10, DB4 00:00 again (offset wraps at the 15-minute interval).
+ .\Start-LogShippingMigration.ps1 -Phase ConfigureLogShipping `
+     -SourceSqlInstance SQL-SRC01 -TargetSqlInstance SQL-TGT01 -TrackingSqlInstance SQL-TGT01 `
+     -SourceBackupShare '\\SQL-SRC01\LSBackups' -TargetBackupShare '\\SQL-TGT01\LSBackups' -WaveFile .\Wave1_Databases.txt `
+     -BackupIntervalMinutes 15 -CopyIntervalMinutes 15 -RestoreIntervalMinutes 15 -ScheduleOffsetMinutes 5
 
  # Single ad-hoc database, initialize only:
  .\Start-LogShippingMigration.ps1 -Phase Initialize -EnableBackup -EnableCopy -EnableRestore `
@@ -82,6 +89,13 @@ param(
     [int]$BackupRetentionMinutes = 4320,
     [int]$BackupThresholdMinutes = 60,
     [int]$RestoreThresholdMinutes = 45,
+    # Staggers the Agent schedule START TIME of the LSBackup / LSCopy / LSRestore jobs: the Nth database
+    # in the wave file (0-based) starts at (N * ScheduleOffsetMinutes) mod <that job's interval>, from 00:00.
+    # The wrap at the interval is deliberate: an Agent schedule's start time is the start of the daily
+    # active window, so a start time past the interval would stop the job running between 00:00 and that
+    # time every day, and would not spread the runs any further. 0 = all jobs start at 00:00 (previous
+    # behaviour). Only affects schedule start time, not log shipping restore delay or thresholds.
+    [ValidateRange(0, 1439)][int]$ScheduleOffsetMinutes = 0,
     # Optional: names the dedicated server to record log-shipping history/threshold alerts.
     # If omitted, source and target each default to monitoring themselves (dbatools' Invoke-DbaDbLogShipping
     # always registers a monitor - there's no "none at all" option - but self-monitoring is a normal,
@@ -160,7 +174,7 @@ if ($doInit) {
                     Write-MigrationLog "  Backup already Complete, skipping." -LogPath $LogPath
                 }
                 else {
-                    Write-MigrationLog "  Backup: starting full (copy-only) + log, compressed..." -LogPath $LogPath
+                    Write-MigrationLog "  Backup: starting full (regular, not copy-only) + log, compressed..." -LogPath $LogPath
                     $backupResult = Invoke-DatabaseBackupPhase -SourceSqlInstance $SourceSqlInstance -DatabaseName $db `
                         -SourceBackupShare $SourceBackupShare -TrackingInstance $TrackingSqlInstance -TrackingDatabase $TrackingDatabase -TrackingId $row.TrackingId
                     $fullFile = $backupResult.FullBackupFile
@@ -211,7 +225,11 @@ if ($doInit) {
 # Phase: ConfigureLogShipping
 # ---------------------------------------------------------------------------
 if ($doConfig) {
+    $dbIndex = -1
     foreach ($db in $databases) {
+        # Position in the wave file drives the schedule offset, so it stays the same on re-runs even
+        # if some databases are skipped below.
+        $dbIndex++
         $trackingRow = Invoke-DbaQuery -SqlInstance $TrackingSqlInstance -Database $TrackingDatabase -Query `
             "SELECT TOP 1 * FROM dbo.LogShippingInitTracking WHERE WaveName = @WaveName AND DatabaseName = @DatabaseName" `
             -SqlParameters @{ WaveName = $WaveName; DatabaseName = $db }
@@ -227,6 +245,7 @@ if ($doConfig) {
                 -SourceBackupShare $SourceBackupShare -TargetBackupShare $TargetBackupShare -BackupIntervalMinutes $BackupIntervalMinutes -CopyIntervalMinutes $CopyIntervalMinutes `
                 -RestoreIntervalMinutes $RestoreIntervalMinutes -BackupRetentionMinutes $BackupRetentionMinutes `
                 -BackupThresholdMinutes $BackupThresholdMinutes -RestoreThresholdMinutes $RestoreThresholdMinutes -MonitorServer $MonitorServer `
+                -StartOffsetMinutes ($dbIndex * $ScheduleOffsetMinutes) `
                 -TrackingInstance $TrackingSqlInstance -TrackingDatabase $TrackingDatabase -TrackingId $trackingRow.TrackingId
             Write-MigrationLog "  Log shipping configured." -LogPath $LogPath
         }

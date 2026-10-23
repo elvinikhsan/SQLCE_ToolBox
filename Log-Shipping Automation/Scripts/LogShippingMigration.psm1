@@ -440,6 +440,8 @@ function Invoke-ConfigureLogShippingPhase {
         [int]$BackupThresholdMinutes = 60,
         [int]$RestoreThresholdMinutes = 45,
         [string]$MonitorServer,
+        # Minutes after 00:00 for this database's job schedules; wrapped at each job's own interval.
+        [int]$StartOffsetMinutes = 0,
         [Parameter(Mandatory)][string]$TrackingInstance,
         [Parameter(Mandatory)][string]$TrackingDatabase,
         [Parameter(Mandatory)][int]$TrackingId
@@ -447,6 +449,13 @@ function Invoke-ConfigureLogShippingPhase {
 
     Set-TrackingField -TrackingInstance $TrackingInstance -TrackingDatabase $TrackingDatabase -TrackingId $TrackingId `
         -Fields @{ LogShippingConfigStatus = 'InProgress'; LogShippingConfigStartTime = (Get-Date) }
+
+    # Agent schedule start time is HHMMSS. Wrapping at the interval keeps every job active all day.
+    $toStartTime = { param([int]$Minutes, [int]$Interval) $m = $Minutes % $Interval; '{0:D2}{1:D2}00' -f [int][math]::Floor($m / 60), ($m % 60) }
+    $backupStart  = & $toStartTime $StartOffsetMinutes $BackupIntervalMinutes
+    $copyStart    = & $toStartTime $StartOffsetMinutes $CopyIntervalMinutes
+    $restoreStart = & $toStartTime $StartOffsetMinutes $RestoreIntervalMinutes
+    Write-MigrationLog "  Schedule start times (HHMMSS): LSBackup $backupStart, LSCopy $copyStart, LSRestore $restoreStart"
 
     try {
         # CopyDestinationFolder tells the secondary where to copy backup files to locally before
@@ -474,14 +483,17 @@ function Invoke-ConfigureLogShippingPhase {
             BackupScheduleFrequencyInterval      = 1
             BackupScheduleFrequencySubdayType    = 'Minutes'
             BackupScheduleFrequencySubdayInterval = $BackupIntervalMinutes
+            BackupScheduleStartTime               = $backupStart
             CopyScheduleFrequencyType             = 'Daily'
             CopyScheduleFrequencyInterval         = 1
             CopyScheduleFrequencySubdayType       = 'Minutes'
             CopyScheduleFrequencySubdayInterval   = $CopyIntervalMinutes
+            CopyScheduleStartTime                 = $copyStart
             RestoreScheduleFrequencyType          = 'Daily'
             RestoreScheduleFrequencyInterval      = 1
             RestoreScheduleFrequencySubdayType    = 'Minutes'
             RestoreScheduleFrequencySubdayInterval = $RestoreIntervalMinutes
+            RestoreScheduleStartTime               = $restoreStart
             NoInitialization       = $true
             NoRecovery             = $true
             BackupThreshold        = $BackupThresholdMinutes
