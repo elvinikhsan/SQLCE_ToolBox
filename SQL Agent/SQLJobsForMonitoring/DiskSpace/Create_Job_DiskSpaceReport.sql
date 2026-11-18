@@ -31,7 +31,7 @@ DECLARE @JobName      SYSNAME       = N'DBA - Disk Space Report';
 DECLARE @ScriptPath   NVARCHAR(400) = N'F:\temp\DiskSpace\Send-DiskSpaceReport.ps1';
 DECLARE @MailProfile  SYSNAME       = N'DB_Mail';
 DECLARE @Recipients   NVARCHAR(MAX) = N'john.doe@corp.contoso.com';   -- semicolon-separated
-DECLARE @SqlPort      NVARCHAR(10)  = N'51933';           -- NULL = connect by name only
+DECLARE @SqlPort      NVARCHAR(10)  = NULL;           -- NULL = connect by name only
 DECLARE @RunTime      INT           = 70000;              -- 07:00:00
 DECLARE @OperatorName SYSNAME       = 'John.Doe';               -- e.g. N'DBA Team'
 
@@ -88,7 +88,7 @@ BEGIN TRY
          @step_id           = 1,
          @subsystem         = N'CmdExec',
          @command           = @Command,
-         @success_code      = 0,
+         --@success_code      = 0,
          @on_success_action = 1,   -- quit with success
          @on_fail_action    = 2,   -- quit with failure
          @retry_attempts    = 0;
