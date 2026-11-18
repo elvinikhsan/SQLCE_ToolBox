@@ -412,7 +412,7 @@ BEGIN TRY
          @description                = N'Daily HTML email: file inventory for all user databases (15_AllDB_FileInventory_Email.sql).',
          @category_name              = N'Database Maintenance',
          @owner_login_name           = @Owner,
-         @notify_level_email         = CASE WHEN @OperatorName IS NULL THEN 0 ELSE 2 END,  -- 2 = on failure
+         @notify_level_email         = 0,  -- 2 = on failure
          @notify_email_operator_name = @OperatorName,
          @job_id                     = @jobId OUTPUT;
 
